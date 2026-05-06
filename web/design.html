@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Todo 设计</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <strong>LLM Todo 设计</strong>
+        <span id="design-url">http://127.0.0.1:8720/design/</span>
+      </div>
+      <nav>
+        <a href="/">工作台</a>
+        <a class="active" href="/design/">设计</a>
+      </nav>
+    </header>
+
+    <main class="design-layout">
+      <aside class="toc">
+        <strong>设计目录</strong>
+        <a href="#overview">系统概览</a>
+        <a href="#data-flow">数据流</a>
+        <a href="#request-response">请求响应</a>
+        <a href="#state-flow">状态流</a>
+        <a href="#horizon-flow">规划尺度流</a>
+        <a href="#code-deps">代码依赖</a>
+        <a href="#directory">目录结构</a>
+        <a href="#responsibilities">代码职责</a>
+        <a href="#risk">风险图</a>
+        <a href="#review">严格评审</a>
+      </aside>
+
+      <section class="design-doc">
+        <section id="overview" class="doc-section hero">
+          <div>
+            <h1>LLM Todo 系统设计</h1>
+            <p>任务、长期规划、聊天入口和模型提供方边界的系统设计。</p>
+          </div>
+          <div id="design-stats" class="stats"></div>
+        </section>
+        <section class="doc-section">
+          <h2>系统架构</h2>
+          <div id="architecture"></div>
+        </section>
+        <section id="data-flow" class="doc-section">
+          <h2>数据流</h2>
+          <div id="data-flow-diagram" class="flow"></div>
+        </section>
+        <section id="request-response" class="doc-section">
+          <h2>请求响应</h2>
+          <div id="request-flow" class="flow"></div>
+        </section>
+        <section id="state-flow" class="doc-section">
+          <h2>任务状态流</h2>
+          <div id="state-flow-diagram" class="flow"></div>
+        </section>
+        <section id="horizon-flow" class="doc-section">
+          <h2>规划尺度流</h2>
+          <div id="horizon-flow-diagram" class="flow"></div>
+        </section>
+        <section id="code-deps" class="doc-section">
+          <h2>代码依赖</h2>
+          <div id="code-deps-list" class="deps"></div>
+        </section>
+        <section id="directory" class="doc-section">
+          <h2>目录结构</h2>
+          <pre><code id="directory-tree"></code></pre>
+        </section>
+        <section id="responsibilities" class="doc-section">
+          <h2>代码职责和行数</h2>
+          <div id="responsibility-table"></div>
+        </section>
+        <section id="risk" class="doc-section">
+          <h2>风险图</h2>
+          <div id="risk-map" class="risk-map"></div>
+        </section>
+        <section id="review" class="doc-section">
+          <h2>严格评审</h2>
+          <article id="review-doc" class="markdown"></article>
+          <form id="review-form" class="review-form">
+            <textarea id="review-content" placeholder="保存新的设计评审"></textarea>
+            <button type="submit">保存评审</button>
+            <span id="review-status"></span>
+          </form>
+          <div id="review-history"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/shared.js"></script>
+    <script src="/design.js"></script>
+  </body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Todo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <strong>LLM Todo</strong>
+        <span id="server-url">http://127.0.0.1:8720/</span>
+      </div>
+      <nav>
+        <a class="active" href="/">工作台</a>
+        <a href="/design/">设计</a>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <section class="task-column">
+        <div class="section-head">
+          <div>
+            <h1>任务</h1>
+            <span id="task-count">加载中</span>
+          </div>
+          <select id="status-filter" aria-label="任务状态过滤">
+            <option value="active">进行中</option>
+            <option value="all">全部</option>
+            <option value="done">已完成</option>
+            <option value="waiting">等待中</option>
+          </select>
+        </div>
+        <form id="quick-task-form" class="quick-task">
+          <input id="quick-task-title" placeholder="快速新增任务" />
+          <button type="submit">新增</button>
+        </form>
+        <div id="task-list" class="task-list"></div>
+      </section>
+
+      <section class="planning-column">
+        <div class="stat-strip" id="stat-strip"></div>
+        <section class="horizon-band" id="horizon-band"></section>
+        <div class="doc-shell">
+          <aside class="doc-list" id="doc-list"></aside>
+          <article class="doc-reader markdown" id="doc-reader"></article>
+        </div>
+      </section>
+
+      <section class="chat-column">
+        <div class="chat-head">
+          <div>
+            <h2>聊天入口</h2>
+            <span>上下文来自任务、时间尺度和领域页面</span>
+          </div>
+          <select id="provider-select" aria-label="模型提供方"></select>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" placeholder="例如：今天下一步是什么？或：新增任务 这周整理年度规划"></textarea>
+          <button type="submit">发送</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="/shared.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
