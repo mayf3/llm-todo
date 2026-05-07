@@ -14,9 +14,12 @@
       </div>
       <nav>
         <a class="active" href="/">工作台</a>
+        <a href="/character.html">角色</a>
         <a href="/design/">设计</a>
       </nav>
     </header>
+
+    <div id="reminder-banner" class="reminder-banner" hidden></div>
 
     <main class="workspace">
       <section class="task-column">
@@ -40,6 +43,20 @@
             <input id="quick-task-title" placeholder="快速新增任务，可加 标签: 复盘 #项目" />
             <button type="submit">新增</button>
           </form>
+          <div class="task-tools">
+            <input id="task-search" placeholder="搜索任务标题" aria-label="搜索任务标题" />
+            <div class="filter-grid">
+              <select id="horizon-filter" aria-label="时间尺度筛选"></select>
+              <select id="area-filter" aria-label="领域筛选"></select>
+              <select id="priority-filter" aria-label="优先级筛选"></select>
+              <select id="tag-filter" aria-label="标签筛选"></select>
+            </div>
+          </div>
+          <div id="batch-bar" class="batch-bar" hidden>
+            <span id="batch-count">已选择 0 个任务</span>
+            <button type="button" data-batch-status="done">批量完成</button>
+            <button type="button" data-batch-status="dropped">批量放弃</button>
+          </div>
           <div id="task-list" class="task-list"></div>
         </section>
         <section id="history-panel" hidden>
@@ -71,6 +88,79 @@
         </form>
       </section>
     </main>
+
+    <div id="task-modal" class="modal-backdrop" hidden>
+      <form id="task-edit-form" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="task-edit-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="task-edit-title">编辑任务</h2>
+            <span id="task-edit-meta">更新任务字段</span>
+          </div>
+          <button type="button" class="icon-button" id="task-edit-close" aria-label="关闭">×</button>
+        </div>
+        <div class="form-grid">
+          <label class="full-field">
+            标题
+            <input id="edit-title" required maxlength="160" />
+          </label>
+          <label>
+            截止日期
+            <input id="edit-due" type="date" />
+          </label>
+          <label>
+            优先级
+            <select id="edit-priority">
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+          <label>
+            时间尺度
+            <select id="edit-horizon">
+              <option value="today">今天</option>
+              <option value="week">本周</option>
+              <option value="month">本月</option>
+              <option value="quarter">季度</option>
+              <option value="year">年度</option>
+              <option value="decade">十年</option>
+              <option value="lifetime">人生</option>
+            </select>
+          </label>
+          <label>
+            重复
+            <select id="edit-repeat">
+              <option value="">不重复</option>
+              <option value="daily">每天</option>
+              <option value="weekly">每周</option>
+              <option value="monthly">每月</option>
+              <option value="quarterly">每季度</option>
+              <option value="yearly">每年</option>
+            </select>
+          </label>
+          <label>
+            领域
+            <input id="edit-area" maxlength="40" />
+          </label>
+          <label>
+            标签
+            <input id="edit-tags" placeholder="用空格、逗号分隔" />
+          </label>
+          <label class="full-field">
+            下一步
+            <input id="edit-next-action" maxlength="220" />
+          </label>
+          <label class="full-field">
+            备注
+            <textarea id="edit-notes" rows="5" maxlength="500"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="task-edit-cancel">取消</button>
+          <button type="submit">保存</button>
+        </div>
+      </form>
+    </div>
 
     <script src="/shared.js"></script>
     <script src="/app.js"></script>

@@ -1,9 +1,43 @@
-async function api(path, options = {}) {
+const TOKEN_STORAGE_KEY = "llm_todo_token";
+
+function tokenValue() {
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+}
+
+function requestToken() {
+  const token = window.prompt("请输入 LLM Todo 访问 Token");
+  if (token && token.trim()) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token.trim());
+    return token.trim();
+  }
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  return "";
+}
+
+async function api(path, options = {}, retryAuth = true) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  const token = tokenValue();
+  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers,
   });
-  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  if (response.status === 401 && retryAuth) {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    if (requestToken()) return api(path, options, false);
+  }
+  if (!response.ok) {
+    let detail = "";
+    try {
+      detail = (await response.json()).error || "";
+    } catch (error) {
+      detail = response.statusText;
+    }
+    throw new Error(detail || `${response.status} ${response.statusText}`);
+  }
   return response.json();
 }
 

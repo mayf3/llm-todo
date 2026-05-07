@@ -19,6 +19,7 @@
     "due": {"type": "string"},
     "nextAction": {"type": "string"},
     "notes": {"type": "string"},
+    "repeat": {"enum": ["", "daily", "weekly", "monthly", "quarterly", "yearly"]},
     "created": {"type": "string"},
     "updated": {"type": "string"}
   }
