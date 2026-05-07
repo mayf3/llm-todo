@@ -28,15 +28,23 @@
           <select id="status-filter" aria-label="任务状态过滤">
             <option value="active">进行中</option>
             <option value="all">全部</option>
-            <option value="done">已完成</option>
             <option value="waiting">等待中</option>
           </select>
         </div>
-        <form id="quick-task-form" class="quick-task">
-          <input id="quick-task-title" placeholder="快速新增任务" />
-          <button type="submit">新增</button>
-        </form>
-        <div id="task-list" class="task-list"></div>
+        <div id="view-tabs" class="view-tabs" role="tablist" aria-label="任务视图">
+          <button type="button" class="active" data-task-view="tasks">当前</button>
+          <button type="button" data-task-view="history">历史</button>
+        </div>
+        <section id="task-panel">
+          <form id="quick-task-form" class="quick-task">
+            <input id="quick-task-title" placeholder="快速新增任务，可加 标签: 复盘 #项目" />
+            <button type="submit">新增</button>
+          </form>
+          <div id="task-list" class="task-list"></div>
+        </section>
+        <section id="history-panel" hidden>
+          <div id="history-list" class="task-list history-list"></div>
+        </section>
       </section>
 
       <section class="planning-column">

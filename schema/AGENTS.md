@@ -4,8 +4,10 @@
 
 - `raw/` 保存原始输入、语音转写、聊天摘录和外部材料。默认只追加，不重写。
 - `todo/` 是 LLM 维护的规划与任务解释层，适合 Obsidian 和 Web 阅读。
-- `data/tasks.json` 是当前任务列表的结构化事实源。
-- 任务变更必须记录 `status`、`horizon`、`area`、`priority`、`created`、`updated`，并尽量有 `nextAction`。
+- `data/tasks.json` 是当前任务列表的结构化事实源，只保存 `active` 和 `waiting`。
+- `data/history.json` 保存 `done` 和 `dropped` 的历史归档。
+- 任务变更必须记录 `status`、`horizon`、`area`、`priority`、`tags`、`created`、`updated`，并尽量有 `nextAction`。
+- `area` 可以是任意自定义字符串，不要假设只有固定四类。
 - 长期规划页只保存方向、约束、判断和复盘节奏；不要把十年目标硬拆成伪精确任务。
 - 聊天窗口是主交互入口。按钮和表单只是可视化、纠错和快速编辑。
 
@@ -21,7 +23,7 @@
 
 ## Chat Workflow
 
-1. 读取 `data/tasks.json`、`todo/index.md` 和相关 horizon/area 页面。
+1. 读取 `data/tasks.json`、`data/history.json`、`todo/index.md` 和相关 horizon/area 页面。
 2. 根据用户消息判断是新增任务、调整计划、复盘、查询还是整理 inbox。
 3. 需要结构化变更时输出可应用 operation。
 4. 更新 `data/tasks.json` 和相关 `todo/` 页面。

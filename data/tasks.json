@@ -7,6 +7,7 @@
       "horizon": "week",
       "area": "system",
       "priority": "high",
+      "tags": [],
       "due": "2026-05-12",
       "nextAction": "验证本地 API、主界面和 /design/ 页面",
       "notes": "首版目标是建立可持续维护的本地结构，而不是一次性任务列表。",
@@ -20,11 +21,26 @@
       "horizon": "year",
       "area": "life",
       "priority": "medium",
+      "tags": [],
       "due": "",
       "nextAction": "在 todo/horizons/year.md 记录年度目标、约束和放弃清单",
       "notes": "长期规划不直接拆成大量任务，先保持原则、方向和可复盘指标。",
       "created": "2026-05-05",
       "updated": "2026-05-05"
+    },
+    {
+      "id": "task-20260507-223139-a40f0a",
+      "title": "研究 QuantDing 仓库",
+      "status": "active",
+      "horizon": "month",
+      "area": "system",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "找到仓库地址，clone下来阅读",
+      "notes": "",
+      "created": "2026-05-07",
+      "updated": "2026-05-07"
     }
   ]
 }

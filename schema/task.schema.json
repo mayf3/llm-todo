@@ -2,14 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "LLM Todo Task",
   "type": "object",
-  "required": ["id", "title", "status", "horizon", "area", "priority", "created", "updated"],
+  "required": ["id", "title", "status", "horizon", "area", "priority", "tags", "created", "updated"],
   "properties": {
     "id": {"type": "string"},
     "title": {"type": "string"},
     "status": {"enum": ["active", "waiting", "done", "dropped"]},
     "horizon": {"enum": ["today", "week", "month", "quarter", "year", "decade", "lifetime"]},
-    "area": {"type": "string"},
+    "area": {"type": "string", "minLength": 1},
     "priority": {"enum": ["high", "medium", "low"]},
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true,
+      "default": []
+    },
     "due": {"type": "string"},
     "nextAction": {"type": "string"},
     "notes": {"type": "string"},
