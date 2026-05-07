@@ -22,6 +22,7 @@ DATA = ROOT / "data"
 DOCS = ROOT / "docs"
 REVIEW_DIR = TODO / "review"
 TASKS_PATH = DATA / "tasks.json"
+HISTORY_PATH = DATA / "history.json"
 
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
 AGENT_CHAT_BASE_URL = os.environ.get("AGENT_CHAT_BASE_URL", "").rstrip("/")
@@ -37,6 +38,9 @@ CONTENT_TYPES = {
 
 HORIZON_ORDER = ["today", "week", "month", "quarter", "year", "decade", "lifetime"]
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+CURRENT_STATUSES = {"active", "waiting"}
+ARCHIVE_STATUSES = {"done", "dropped"}
+TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
 
 
 def rel(path: Path) -> str:
@@ -93,15 +97,134 @@ def first_summary(body: str) -> str:
     return ""
 
 
-def load_tasks() -> list[dict]:
-    if not TASKS_PATH.exists():
+def clean_text(value: object, limit: int, fallback: str = "") -> str:
+    text = str(value if value is not None else "").strip()
+    return (text[:limit] if text else fallback)
+
+
+def normalize_area(value: object, fallback: str = "life") -> str:
+    area = re.sub(r"\s+", " ", str(value if value is not None else "").strip())
+    area = area.strip("#/，,。；;")
+    return area[:40] or fallback
+
+
+def normalize_tags(value: object) -> list[str]:
+    if value is None:
         return []
-    payload = json.loads(read_text(TASKS_PATH))
-    return payload.get("tasks", [])
+    raw_items: list[str] = []
+    if isinstance(value, list):
+        for item in value:
+            raw_items.extend(re.split(r"[,，、\s]+", str(item)))
+    else:
+        raw_items.extend(re.split(r"[,，、\s]+", str(value)))
+
+    tags: list[str] = []
+    seen: set[str] = set()
+    for item in raw_items:
+        tag = item.strip().strip("#/，,。；;")
+        if not tag:
+            continue
+        tag = tag[:32]
+        marker = tag.lower()
+        if marker not in seen:
+            tags.append(tag)
+            seen.add(marker)
+        if len(tags) >= 12:
+            break
+    return tags
+
+
+def normalize_task(task: dict, default_status: str = "active") -> dict:
+    today = str(datetime.now().date())
+    status = task.get("status") if task.get("status") in TASK_STATUSES else default_status
+    horizon = task.get("horizon") if task.get("horizon") in HORIZON_ORDER else "week"
+    priority = task.get("priority") if task.get("priority") in PRIORITY_ORDER else "medium"
+    return {
+        "id": clean_text(task.get("id"), 80, new_task_id()),
+        "title": clean_text(task.get("title"), 160, "未命名任务"),
+        "status": status,
+        "horizon": horizon,
+        "area": normalize_area(task.get("area"), "life"),
+        "priority": priority,
+        "tags": normalize_tags(task.get("tags")),
+        "due": clean_text(task.get("due"), 20),
+        "nextAction": clean_text(task.get("nextAction"), 220),
+        "notes": clean_text(task.get("notes"), 500),
+        "created": clean_text(task.get("created"), 20, today),
+        "updated": clean_text(task.get("updated"), 20, today),
+    }
+
+
+def read_task_file(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    payload = json.loads(read_text(path))
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    items = payload.get("tasks", payload.get("history", [])) if isinstance(payload, dict) else []
+    return [item for item in items if isinstance(item, dict)]
+
+
+def load_tasks() -> list[dict]:
+    current: list[dict] = []
+    archived: list[dict] = []
+    for raw_task in read_task_file(TASKS_PATH):
+        task = normalize_task(raw_task)
+        if task["status"] in ARCHIVE_STATUSES:
+            archived.append(task)
+        else:
+            current.append(task)
+    if archived:
+        write_tasks_file(TASKS_PATH, current)
+        append_history(archived)
+    return current
 
 
 def save_tasks(tasks: list[dict]) -> None:
-    write_text(TASKS_PATH, json.dumps({"tasks": tasks}, ensure_ascii=False, indent=2) + "\n")
+    current: list[dict] = []
+    archived: list[dict] = []
+    for raw_task in tasks:
+        task = normalize_task(raw_task)
+        if task["status"] in ARCHIVE_STATUSES:
+            archived.append(task)
+        else:
+            current.append(task)
+    write_tasks_file(TASKS_PATH, current)
+    if archived:
+        append_history(archived)
+
+
+def write_tasks_file(path: Path, tasks: list[dict]) -> None:
+    write_text(path, json.dumps({"tasks": tasks}, ensure_ascii=False, indent=2) + "\n")
+
+
+def load_history() -> list[dict]:
+    load_tasks()
+    return [normalize_task(task, "done") for task in read_task_file(HISTORY_PATH)]
+
+
+def save_history(tasks: list[dict]) -> None:
+    unique: dict[str, dict] = {}
+    for raw_task in tasks:
+        task = normalize_task(raw_task, "done")
+        if task["status"] not in ARCHIVE_STATUSES:
+            task["status"] = "done"
+        unique[task["id"]] = task
+    write_tasks_file(HISTORY_PATH, list(unique.values()))
+
+
+def append_history(tasks: list[dict]) -> None:
+    history = {task["id"]: task for task in load_history_raw()}
+    for raw_task in tasks:
+        task = normalize_task(raw_task, "done")
+        if task["status"] not in ARCHIVE_STATUSES:
+            task["status"] = "done"
+        history[task["id"]] = task
+    write_tasks_file(HISTORY_PATH, list(history.values()))
+
+
+def load_history_raw() -> list[dict]:
+    return [normalize_task(task, "done") for task in read_task_file(HISTORY_PATH)]
 
 
 def list_markdown(root: Path) -> list[Path]:
@@ -165,16 +288,22 @@ def providers() -> list[dict]:
 
 def stats() -> dict:
     tasks = load_tasks()
+    history = load_history()
+    all_tasks = tasks + history
     active = [task for task in tasks if task.get("status") == "active"]
     by_horizon: dict[str, int] = {}
     by_area: dict[str, int] = {}
-    for task in tasks:
+    for task in all_tasks:
         by_horizon[task.get("horizon", "week")] = by_horizon.get(task.get("horizon", "week"), 0) + 1
         by_area[task.get("area", "life")] = by_area.get(task.get("area", "life"), 0) + 1
     return {
-        "tasks": len(tasks),
+        "total": len(all_tasks),
+        "tasks": len(all_tasks),
+        "current": len(tasks),
+        "history": len(history),
         "active": len(active),
-        "done": len([task for task in tasks if task.get("status") == "done"]),
+        "done": len([task for task in history if task.get("status") == "done"]),
+        "dropped": len([task for task in history if task.get("status") == "dropped"]),
         "planningDocs": len(doc_records()),
         "byHorizon": by_horizon,
         "byArea": by_area,
@@ -195,8 +324,13 @@ def sorted_tasks(tasks: list[dict]) -> list[dict]:
     )
 
 
+def sorted_history(tasks: list[dict]) -> list[dict]:
+    return sorted(tasks, key=lambda task: (task.get("updated", ""), task.get("created", ""), task.get("title", "")), reverse=True)
+
+
 def state_payload() -> dict:
     tasks = sorted_tasks(load_tasks())
+    history = sorted_history(load_history())
     docs = doc_records()
     plans = {}
     for key, path in {
@@ -207,7 +341,7 @@ def state_payload() -> dict:
         if path.exists():
             _, body = split_frontmatter(read_text(path))
             plans[key] = first_summary(body)
-    return {"stats": stats(), "tasks": tasks, "docs": docs, "plans": plans}
+    return {"stats": stats(), "tasks": tasks, "history": history, "docs": docs, "plans": plans}
 
 
 def append_log(line: str) -> None:
@@ -245,7 +379,20 @@ def infer_horizon(text: str) -> str:
     return "week"
 
 
+def extract_area(text: str) -> str:
+    match = re.search(r"(?:领域|area)\s*[:：]\s*([^\s,，。；;#]{1,40})", text, re.I)
+    if match:
+        return normalize_area(match.group(1))
+    match = re.search(r"#area/([\w\-\u4e00-\u9fff]{1,40})", text, re.I)
+    if match:
+        return normalize_area(match.group(1))
+    return ""
+
+
 def infer_area(text: str) -> str:
+    explicit = extract_area(text)
+    if explicit:
+        return explicit
     lowered = text.lower()
     if any(key in text for key in ["系统", "项目", "代码", "agent", "聊天", "工具"]) or any(key in lowered for key in ["code", "system", "agent"]):
         return "system"
@@ -256,6 +403,15 @@ def infer_area(text: str) -> str:
     if any(key in text for key in ["工作", "客户", "会议"]):
         return "work"
     return "life"
+
+
+def extract_tags(text: str) -> list[str]:
+    tag_text = re.sub(r"#area/[\w\-\u4e00-\u9fff]{1,40}", "", text, flags=re.I)
+    tags = re.findall(r"(?<![\w/])#([\w\-\u4e00-\u9fff]{1,32})", tag_text)
+    match = re.search(r"(?:标签|tags?)\s*[:：]\s*([^。；;\n]+)", tag_text, re.I)
+    if match:
+        tags.extend(re.split(r"[,，、\s]+", match.group(1)))
+    return normalize_tags(tags)
 
 
 def infer_priority(text: str) -> str:
@@ -272,21 +428,34 @@ def extract_title(message: str) -> str:
     if quoted:
         return quoted.group(1).strip()
     title = re.sub(r"^(帮我|请|麻烦)?(新增|添加|记录|记一下|安排|创建)(一个)?(todo|待办|任务)?[:：,\s]*", "", message.strip(), flags=re.I)
+    title = strip_task_metadata(title)
     title = re.sub(r"(今天|这周|本周|这个月|今年|长期|高优先级|紧急|重要)", "", title).strip(" ，,。.")
     return title[:120] or message.strip()[:120] or "未命名任务"
 
 
+def strip_task_metadata(text: str) -> str:
+    title = str(text).strip()
+    title = re.sub(r"(?:领域|area)\s*[:：]\s*[^\s,，。；;#]{1,40}", "", title, flags=re.I)
+    title = re.sub(r"#area/[\w\-\u4e00-\u9fff]{1,40}", "", title, flags=re.I)
+    title = re.sub(r"(?:标签|tags?)\s*[:：]\s*[^。；;\n]+", "", title, flags=re.I)
+    title = re.sub(r"(?<![\w/])#[\w\-\u4e00-\u9fff]{1,32}", "", title)
+    return title.strip(" ，,。.")
+
+
 def create_task_from_message(message: str) -> dict:
     today = str(datetime.now().date())
+    title = extract_title(message)
+    horizon = infer_horizon(message)
     return {
         "id": new_task_id(),
-        "title": extract_title(message),
+        "title": title,
         "status": "active",
-        "horizon": infer_horizon(message),
+        "horizon": horizon,
         "area": infer_area(message),
         "priority": infer_priority(message),
-        "due": today if infer_horizon(message) == "today" else "",
-        "nextAction": "明确下一步动作" if len(extract_title(message)) < 12 else extract_title(message),
+        "tags": extract_tags(message),
+        "due": today if horizon == "today" else "",
+        "nextAction": "明确下一步动作" if len(title) < 12 else title,
         "notes": "由聊天创建。",
         "created": today,
         "updated": today,
@@ -377,25 +546,27 @@ def context_package(messages: list[dict]) -> dict:
         "lifetime": TODO / "horizons" / "lifetime.md",
         "year": TODO / "horizons" / "year.md",
         "quarter": TODO / "horizons" / "quarter.md",
-        "system": TODO / "areas" / "system.md",
-        "life": TODO / "areas" / "life.md",
     }.items():
         if path.exists():
             _, body = split_frontmatter(read_text(path))
             docs[key] = body[:4000]
+    for path in sorted((TODO / "areas").glob("*.md")):
+        _, body = split_frontmatter(read_text(path))
+        docs[f"area:{path.stem}"] = body[:4000]
     return {
         "system": (
             "你是 LLM Todo 规划助手。必须区分人生规划尺度和具体任务。"
             "需要变更时返回包含 reply 和安全 operations 的 JSON。"
         ),
         "tasks": load_tasks(),
+        "history": sorted_history(load_history())[:30],
         "planningDocs": docs,
         "messages": messages[-16:],
         "operationSchema": {
             "reply": "string",
             "operations": [
-                {"type": "create_task", "title": "string", "horizon": "week", "area": "life", "priority": "medium", "nextAction": "string", "notes": "string"},
-                {"type": "update_task", "id": "task id", "status": "active|waiting|done|dropped", "nextAction": "string"},
+                {"type": "create_task", "title": "string", "horizon": "week", "area": "custom area", "priority": "medium", "tags": ["string"], "nextAction": "string", "notes": "string"},
+                {"type": "update_task", "id": "task id", "status": "active|waiting|done|dropped", "tags": ["string"], "nextAction": "string"},
                 {"type": "append_log", "content": "string"},
             ],
         },
@@ -436,22 +607,59 @@ def agent_chat_forward(payload: dict) -> dict:
     if not AGENT_CHAT_BASE_URL:
         raise RuntimeError("AGENT_CHAT_BASE_URL 未配置")
     messages = payload.get("messages") or []
-    package_note = "LLM Todo context package:\n" + json.dumps(context_package(messages), ensure_ascii=False)[:12000]
+    package_note = "LLM Todo 上下文包：\n" + json.dumps(context_package(messages), ensure_ascii=False)[:12000]
     forwarded = {
         "provider": payload.get("agentProvider") or "local-echo",
-        "contextId": "default",
+        "contextId": "llm-todo",
         "messages": [{"role": "user", "content": package_note}, *messages[-8:]],
     }
     data = json.dumps(forwarded, ensure_ascii=False).encode("utf-8")
+    raw = agent_chat_stream_request(data)
+    return {
+        "text": raw.get("text", ""),
+        "provider": "agent-chat",
+        "model": raw.get("model", ""),
+        "operations": [],
+        "toolRequests": raw.get("toolRequests", []),
+    }
+
+
+def agent_chat_stream_request(data: bytes) -> dict:
     request = urllib.request.Request(
-        f"{AGENT_CHAT_BASE_URL}/api/chat",
+        f"{AGENT_CHAT_BASE_URL}/api/chat/stream",
         data=data,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=120) as response:
-        raw = json.loads(response.read().decode("utf-8"))
-    return {"text": raw.get("text", ""), "provider": "agent-chat", "model": raw.get("model", ""), "operations": []}
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            text = response.read().decode("utf-8")
+        done = {}
+        for block in text.split("\n\n"):
+            lines = block.splitlines()
+            event = ""
+            payload = ""
+            for line in lines:
+                if line.startswith("event:"):
+                    event = line[6:].strip()
+                elif line.startswith("data:"):
+                    payload += line[5:].strip()
+            if event == "done" and payload:
+                done = json.loads(payload)
+            elif event == "error" and payload:
+                raise RuntimeError(json.loads(payload).get("error", "Agent Chat stream error"))
+        if done:
+            return done
+    except Exception:
+        fallback = urllib.request.Request(
+            f"{AGENT_CHAT_BASE_URL}/api/chat",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(fallback, timeout=120) as response:
+            return json.loads(response.read().decode("utf-8"))
+    return {"text": "", "model": "", "toolRequests": []}
 
 
 def apply_model_json(text: str) -> dict:
@@ -479,8 +687,9 @@ def apply_operations(operations: list[dict]) -> list[dict]:
                 "title": str(op.get("title", "未命名任务"))[:160],
                 "status": "active",
                 "horizon": op.get("horizon") if op.get("horizon") in HORIZON_ORDER else "week",
-                "area": str(op.get("area", "life"))[:40],
+                "area": normalize_area(op.get("area"), "life"),
                 "priority": op.get("priority") if op.get("priority") in {"high", "medium", "low"} else "medium",
+                "tags": normalize_tags(op.get("tags")),
                 "due": str(op.get("due", ""))[:20],
                 "nextAction": str(op.get("nextAction", ""))[:220],
                 "notes": str(op.get("notes", ""))[:500],
@@ -497,6 +706,10 @@ def apply_operations(operations: list[dict]) -> list[dict]:
                         task["status"] = op["status"]
                     if "nextAction" in op:
                         task["nextAction"] = str(op.get("nextAction", ""))[:220]
+                    if "tags" in op:
+                        task["tags"] = normalize_tags(op.get("tags"))
+                    if "area" in op:
+                        task["area"] = normalize_area(op.get("area"), task.get("area", "life"))
                     task["updated"] = today
                     applied.append({"type": "update_task", "id": task["id"], "status": task["status"]})
                     changed = True
@@ -527,13 +740,16 @@ def dispatch_chat(payload: dict) -> dict:
 
 def create_task(payload: dict) -> dict:
     today = str(datetime.now().date())
+    raw_title = str(payload.get("title", "未命名任务")).strip()
+    title = strip_task_metadata(raw_title)[:160] or raw_title[:160] or "未命名任务"
     task = {
         "id": new_task_id(),
-        "title": str(payload.get("title", "未命名任务")).strip()[:160] or "未命名任务",
+        "title": title,
         "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped"} else "active",
-        "horizon": payload.get("horizon") if payload.get("horizon") in HORIZON_ORDER else "week",
-        "area": str(payload.get("area", "life")).strip()[:40] or "life",
-        "priority": payload.get("priority") if payload.get("priority") in {"high", "medium", "low"} else "medium",
+        "horizon": payload.get("horizon") if payload.get("horizon") in HORIZON_ORDER else infer_horizon(raw_title),
+        "area": normalize_area(payload.get("area"), infer_area(raw_title)),
+        "priority": payload.get("priority") if payload.get("priority") in {"high", "medium", "low"} else infer_priority(title),
+        "tags": normalize_tags(payload.get("tags")) or extract_tags(raw_title),
         "due": str(payload.get("due", "")).strip()[:20],
         "nextAction": str(payload.get("nextAction", "")).strip()[:220],
         "notes": str(payload.get("notes", "")).strip()[:500],
@@ -550,26 +766,49 @@ def create_task(payload: dict) -> dict:
 def update_task(payload: dict) -> dict:
     task_id = str(payload.get("id", ""))
     tasks = load_tasks()
+    history = load_history()
     today = str(datetime.now().date())
     updated = None
+    source = "tasks"
     for task in tasks:
         if task.get("id") != task_id:
             continue
-        for key in ("title", "nextAction", "notes", "due", "area"):
-            if key in payload:
-                task[key] = str(payload.get(key, "")).strip()
-        if payload.get("status") in {"active", "waiting", "done", "dropped"}:
-            task["status"] = payload["status"]
-        if payload.get("horizon") in HORIZON_ORDER:
-            task["horizon"] = payload["horizon"]
-        if payload.get("priority") in {"high", "medium", "low"}:
-            task["priority"] = payload["priority"]
-        task["updated"] = today
         updated = task
         break
+    if updated is None:
+        source = "history"
+        for task in history:
+            if task.get("id") == task_id:
+                updated = task
+                break
     if not updated:
         raise ValueError("task not found")
-    save_tasks(tasks)
+
+    for key in ("title", "nextAction", "notes", "due"):
+        if key in payload:
+            updated[key] = str(payload.get(key, "")).strip()
+    if "area" in payload:
+        updated["area"] = normalize_area(payload.get("area"), updated.get("area", "life"))
+    if "tags" in payload:
+        updated["tags"] = normalize_tags(payload.get("tags"))
+    if payload.get("status") in TASK_STATUSES:
+        updated["status"] = payload["status"]
+    if payload.get("horizon") in HORIZON_ORDER:
+        updated["horizon"] = payload["horizon"]
+    if payload.get("priority") in {"high", "medium", "low"}:
+        updated["priority"] = payload["priority"]
+    updated["updated"] = today
+
+    if source == "history":
+        history = [task for task in history if task.get("id") != task_id]
+        if updated["status"] in CURRENT_STATUSES:
+            tasks.append(updated)
+        else:
+            history.append(updated)
+        save_history(history)
+        save_tasks(tasks)
+    else:
+        save_tasks(tasks)
     append_log(f"更新任务：{updated['title']} → {updated['status']}")
     return {"task": updated, "state": state_payload()}
 
@@ -584,6 +823,7 @@ def directory_tree() -> str:
     inbox/
   data/
     tasks.json
+    history.json
   todo/
     index.md
     log.md
@@ -616,7 +856,8 @@ def design_payload() -> dict:
         ("web/shared.js", "API 客户端和 Markdown 渲染器"),
         ("web/app.js", "任务列表、文档阅读、聊天、模型提供方选择和快速创建交互"),
         ("web/design.js", "设计图、风险图、职责表和评审历史"),
-        ("data/tasks.json", "结构化任务事实源"),
+        ("data/tasks.json", "当前任务事实源，只保存 active/waiting"),
+        ("data/history.json", "已完成和已放弃任务归档"),
         ("schema/AGENTS.md", "LLM 维护规则"),
         ("schema/task.schema.json", "任务字段约束"),
         ("docs/design.md", "系统设计文档"),
@@ -628,7 +869,7 @@ def design_payload() -> dict:
         "stats": stats(),
         "architecture": [
             "raw/ 保存未整理输入，避免聊天材料丢失。",
-            "data/tasks.json 是任务事实源，负责当前状态和下一步动作。",
+            "data/tasks.json 是当前任务事实源，data/history.json 保存已完成和已放弃任务。",
             "todo/ 保存时间尺度、领域、日志和评审，是 LLM 维护的解释层。",
             "scripts/llm_todo_server.py 暴露本地 API，并把聊天消息转成安全变更操作。",
             "web/ 提供任务工作台和设计文档网站；聊天窗口是主入口。",
@@ -641,7 +882,8 @@ def design_payload() -> dict:
             "requestResponse": ["浏览器打开首页", "请求 /api/state", "渲染工作台", "提交 /api/chat", "组装任务上下文", "应用安全操作", "返回最新状态"],
             "codeDeps": [
                 {"from": "web/app.js", "to": "scripts/llm_todo_server.py", "label": "/api/state /api/chat /api/tasks/update"},
-                {"from": "scripts/llm_todo_server.py", "to": "data/tasks.json", "label": "读写任务事实源"},
+                {"from": "scripts/llm_todo_server.py", "to": "data/tasks.json", "label": "读写当前任务事实源"},
+                {"from": "scripts/llm_todo_server.py", "to": "data/history.json", "label": "归档 done/dropped 任务"},
                 {"from": "scripts/llm_todo_server.py", "to": "todo/", "label": "读取规划文档并追加日志或评审"},
                 {"from": "scripts/llm_todo_server.py", "to": "../llm_agent_chat", "label": "可选转发 AGENT_CHAT_BASE_URL"},
                 {"from": "scripts/llm_todo_server.py", "to": "OpenAI Responses API", "label": "可选模型提供方"},
@@ -731,8 +973,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True, "root": str(ROOT), "stats": stats()})
             elif parsed.path == "/api/state":
                 self.send_json(state_payload())
+            elif parsed.path == "/api/stats":
+                self.send_json(stats())
             elif parsed.path == "/api/tasks":
                 self.send_json({"tasks": sorted_tasks(load_tasks())})
+            elif parsed.path == "/api/history":
+                self.send_json({"tasks": sorted_history(load_history())})
             elif parsed.path == "/api/docs":
                 self.send_json({"docs": doc_records()})
             elif parsed.path == "/api/doc":

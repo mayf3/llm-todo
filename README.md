@@ -2,7 +2,7 @@
 
 本地 LLM 任务与人生规划工作台。
 
-这个项目沿用 LLM Wiki 的模式：原始输入保存在 `raw/`，长期规划和任务解释保存在 `todo/`，结构化任务保存在 `data/tasks.json`，浏览器工作台提供任务视图、规划文档和聊天窗口。
+这个项目沿用 LLM Wiki 的模式：原始输入保存在 `raw/`，长期规划和任务解释保存在 `todo/`，当前任务保存在 `data/tasks.json`，历史归档保存在 `data/history.json`，浏览器工作台提供任务视图、规划文档和聊天窗口。
 
 ## Quick Start
 

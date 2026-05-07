@@ -1,6 +1,8 @@
 let state = null;
+let historyState = { tasks: [] };
 let activeDoc = "todo/index.md";
 let chatMessages = [];
+let activeView = "tasks";
 
 const statusLabels = { active: "进行中", waiting: "等待中", done: "已完成", dropped: "已放弃" };
 const horizonLabels = { today: "今天", week: "本周", month: "本月", quarter: "季度", year: "年度", decade: "十年", lifetime: "人生" };
@@ -13,16 +15,45 @@ function providerValue() {
 }
 
 function renderStats() {
-  document.getElementById("task-count").textContent = `${state.stats.active} 个进行中 / 共 ${state.stats.tasks} 个`;
+  const total = state.stats.total ?? state.stats.tasks;
+  document.getElementById("task-count").textContent = `${state.stats.active} 个进行中 / 共 ${total} 个`;
   document.getElementById("stat-strip").innerHTML = `
     <span><strong>${state.stats.active}</strong> 进行中</span>
     <span><strong>${state.stats.done}</strong> 已完成</span>
+    <span><strong>${state.stats.dropped || 0}</strong> 已放弃</span>
     <span><strong>${state.stats.planningDocs}</strong> 规划页</span>
     <span><strong>${Object.keys(state.stats.byArea).length}</strong> 领域</span>
   `;
   document.getElementById("provider-select").innerHTML = state.stats.providers
     .map((provider) => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.name)}${provider.configured ? "" : " (未配置)"}</option>`)
     .join("");
+}
+
+function renderTags(task) {
+  const tags = Array.isArray(task.tags) ? task.tags : [];
+  if (tags.length === 0) return "";
+  return `<div class="tag-list">${tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}</div>`;
+}
+
+function taskMeta(task, includeStatus = false) {
+  const parts = [
+    horizonLabels[task.horizon] || task.horizon,
+    areaLabels[task.area] || task.area,
+    `${priorityLabels[task.priority] || task.priority}优先级`,
+  ];
+  if (includeStatus) parts.unshift(statusLabels[task.status] || task.status);
+  if (task.due) parts.push(`截止 ${task.due}`);
+  if (task.updated) parts.push(`更新 ${task.updated}`);
+  return parts.filter(Boolean).map(escapeHtml).join(" · ");
+}
+
+function renderViewTabs() {
+  document.querySelectorAll("[data-task-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.taskView === activeView);
+  });
+  document.getElementById("task-panel").hidden = activeView !== "tasks";
+  document.getElementById("history-panel").hidden = activeView !== "history";
+  document.getElementById("status-filter").hidden = activeView !== "tasks";
 }
 
 function renderHorizons() {
@@ -48,12 +79,38 @@ function renderTasks() {
               <article class="task-item ${escapeHtml(task.status)}">
                 <div>
                   <strong>${escapeHtml(task.title)}</strong>
-                  <span>${escapeHtml(horizonLabels[task.horizon] || task.horizon)} · ${escapeHtml(areaLabels[task.area] || task.area)} · ${escapeHtml(priorityLabels[task.priority] || task.priority)}优先级${task.due ? ` · 截止 ${escapeHtml(task.due)}` : ""}</span>
+                  <span>${taskMeta(task)}</span>
+                  ${renderTags(task)}
                   <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
                 </div>
                 <div class="task-actions">
                   ${task.status === "active" ? `<button type="button" data-action="done" data-id="${escapeHtml(task.id)}">完成</button><button type="button" data-action="waiting" data-id="${escapeHtml(task.id)}">等待</button>` : ""}
-                  ${task.status !== "active" ? `<button type="button" data-action="active" data-id="${escapeHtml(task.id)}">恢复</button>` : ""}
+                  ${task.status === "waiting" ? `<button type="button" data-action="active" data-id="${escapeHtml(task.id)}">恢复</button><button type="button" data-action="done" data-id="${escapeHtml(task.id)}">完成</button>` : ""}
+                  <button type="button" data-action="dropped" data-id="${escapeHtml(task.id)}">放弃</button>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+}
+
+function renderHistory() {
+  const tasks = historyState.tasks || [];
+  document.getElementById("history-list").innerHTML =
+    tasks.length === 0
+      ? '<p class="empty">暂无已完成或已放弃任务。</p>'
+      : tasks
+          .map(
+            (task) => `
+              <article class="task-item ${escapeHtml(task.status)} archived">
+                <div>
+                  <strong>${escapeHtml(task.title)}</strong>
+                  <span>${taskMeta(task, true)}</span>
+                  ${renderTags(task)}
+                  <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
+                </div>
+                <div class="task-actions">
+                  <button type="button" data-action="active" data-id="${escapeHtml(task.id)}">恢复</button>
                 </div>
               </article>
             `,
@@ -95,14 +152,24 @@ function resolveDocPath(link) {
 }
 
 async function refresh() {
-  state = await api("/api/state");
+  const nextState = await api("/api/state");
+  let nextHistory = { tasks: nextState.history || [] };
+  try {
+    nextHistory = await api("/api/history");
+  } catch (error) {
+    console.warn("历史任务接口暂不可用，使用 /api/state 中的历史数据。", error);
+  }
+  state = nextState;
+  historyState = nextHistory;
   const currentProvider = providerValue();
   renderStats();
   if ([...document.getElementById("provider-select").options].some((option) => option.value === currentProvider)) {
     document.getElementById("provider-select").value = currentProvider;
   }
   renderHorizons();
+  renderViewTabs();
   renderTasks();
+  renderHistory();
   renderDocs();
 }
 
@@ -129,11 +196,25 @@ async function sendChat(content) {
   chatMessages = chatMessages.filter((item) => item.content !== "处理中...");
   chatMessages.push({ role: "assistant", content: response.text });
   state = response.state;
+  historyState = { tasks: response.state.history || historyState.tasks };
   renderStats();
   renderHorizons();
+  renderViewTabs();
   renderTasks();
+  renderHistory();
   renderDocs();
   renderChat();
+}
+
+async function updateTaskStatus(id, status) {
+  const response = await api("/api/tasks/update", { method: "POST", body: JSON.stringify({ id, status }) });
+  state = response.state;
+  historyState = { tasks: response.state.history || historyState.tasks };
+  renderStats();
+  renderViewTabs();
+  renderTasks();
+  renderHistory();
+  renderDocs();
 }
 
 async function init() {
@@ -144,25 +225,30 @@ async function init() {
 
   document.getElementById("status-filter").addEventListener("change", renderTasks);
 
+  document.getElementById("view-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-task-view]");
+    if (!button) return;
+    activeView = button.dataset.taskView;
+    renderViewTabs();
+  });
+
   document.getElementById("quick-task-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const title = document.getElementById("quick-task-title").value.trim();
     if (!title) return;
-    const response = await api("/api/tasks/create", { method: "POST", body: JSON.stringify({ title, horizon: "week", area: "life", priority: "medium" }) });
+    const response = await api("/api/tasks/create", { method: "POST", body: JSON.stringify({ title, horizon: "week", priority: "medium" }) });
     document.getElementById("quick-task-title").value = "";
     state = response.state;
+    historyState = { tasks: response.state.history || historyState.tasks };
     renderStats();
     renderTasks();
+    renderHistory();
   });
 
-  document.getElementById("task-list").addEventListener("click", async (event) => {
+  document.querySelector(".task-column").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
-    const response = await api("/api/tasks/update", { method: "POST", body: JSON.stringify({ id: button.dataset.id, status: button.dataset.action }) });
-    state = response.state;
-    renderStats();
-    renderTasks();
-    renderDocs();
+    await updateTaskStatus(button.dataset.id, button.dataset.action);
   });
 
   document.getElementById("doc-list").addEventListener("click", async (event) => {

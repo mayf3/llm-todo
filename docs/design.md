@@ -2,7 +2,7 @@
 title: LLM Todo 系统设计
 kind: design
 updated: 2026-05-05
-sources: README.md; schema/AGENTS.md; data/tasks.json; Karpathy LLM Wiki pattern
+sources: README.md; schema/AGENTS.md; data/tasks.json; data/history.json; Karpathy LLM Wiki pattern
 confidence: high
 ---
 
@@ -18,7 +18,7 @@ Karpathy 的 LLM Wiki 模式强调：不要只做一次性检索，而要让 LLM
 
 - `raw/` 保存原始输入。
 - `todo/` 保存 LLM 维护后的长期规划、领域页和日志。
-- `data/tasks.json` 保存当前任务事实。
+- `data/tasks.json` 保存当前任务事实，`data/history.json` 保存已完成和已放弃归档。
 - Web 是阅读、纠错和聊天入口，不是唯一 source of truth。
 
 ## 与 Agent Chat 的关系
@@ -36,13 +36,13 @@ Karpathy 的 LLM Wiki 模式强调：不要只做一次性检索，而要让 LLM
   ↓
 scripts/llm_todo_server.py
   ↓ reads
-data/tasks.json + todo/*.md + raw/inbox
+data/tasks.json + data/history.json + todo/*.md + raw/inbox
   ↓
 local planner or external provider
   ↓
 task operations + planning notes
   ↓ writes
-data/tasks.json + todo/log.md + 可选 raw 捕获
+data/tasks.json + data/history.json + todo/log.md + 可选 raw 捕获
   ↓
 Web dashboard rerenders
 ```
@@ -97,6 +97,7 @@ llm_todo/
     inbox/
   data/
     tasks.json
+    history.json
   todo/
     index.md
     log.md
@@ -128,7 +129,7 @@ llm_todo/
 | 高 | 聊天写入误改长期规划。 | 所有写入先限制在任务 JSON 和日志；长期页写入需要专门操作。 |
 | 中 | 模型提供方适配散落在业务里。 | 把通用聊天模块放到同层 `llm_agent_chat`，todo 只暴露上下文和工具。 |
 | 中 | 本地规则助手让用户误以为真实 LLM 已工作。 | UI 显示模型提供方状态，并返回明确的本地规则文案。 |
-| 低 | JSON 和 Markdown 双写不一致。 | `data/tasks.json` 是任务事实源，Markdown 是解释和复盘层。 |
+| 低 | JSON 和 Markdown 双写不一致。 | `data/tasks.json` 和 `data/history.json` 是任务事实源，Markdown 是解释和复盘层。 |
 
 ## 设计评审要求
 

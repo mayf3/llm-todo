@@ -41,25 +41,25 @@
           </div>
           <div id="design-stats" class="stats"></div>
         </section>
-        <section class="doc-section">
+        <section class="doc-section full-span">
           <h2>系统架构</h2>
           <div id="architecture"></div>
         </section>
         <section id="data-flow" class="doc-section">
           <h2>数据流</h2>
-          <div id="data-flow-diagram" class="flow"></div>
+          <div id="data-flow-diagram" class="pipeline-diagram"></div>
         </section>
         <section id="request-response" class="doc-section">
           <h2>请求响应</h2>
-          <div id="request-flow" class="flow"></div>
+          <div id="request-flow" class="sequence-diagram"></div>
         </section>
         <section id="state-flow" class="doc-section">
           <h2>任务状态流</h2>
-          <div id="state-flow-diagram" class="flow"></div>
+          <div id="state-flow-diagram" class="state-diagram"></div>
         </section>
         <section id="horizon-flow" class="doc-section">
           <h2>规划尺度流</h2>
-          <div id="horizon-flow-diagram" class="flow"></div>
+          <div id="horizon-flow-diagram" class="state-diagram"></div>
         </section>
         <section id="code-deps" class="doc-section">
           <h2>代码依赖</h2>
@@ -80,11 +80,6 @@
         <section id="review" class="doc-section">
           <h2>严格评审</h2>
           <article id="review-doc" class="markdown"></article>
-          <form id="review-form" class="review-form">
-            <textarea id="review-content" placeholder="保存新的设计评审"></textarea>
-            <button type="submit">保存评审</button>
-            <span id="review-status"></span>
-          </form>
           <div id="review-history"></div>
         </section>
       </section>
