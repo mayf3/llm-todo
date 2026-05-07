@@ -2,15 +2,19 @@
 from __future__ import annotations
 
 import hashlib
+import calendar
 import json
 import os
 import re
+import shutil
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
 import uuid
-from datetime import datetime
+from contextlib import contextmanager
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -23,9 +27,11 @@ DOCS = ROOT / "docs"
 REVIEW_DIR = TODO / "review"
 TASKS_PATH = DATA / "tasks.json"
 HISTORY_PATH = DATA / "history.json"
+BACKUP_DIR = DATA / "backups"
 
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
 AGENT_CHAT_BASE_URL = os.environ.get("AGENT_CHAT_BASE_URL", "").rstrip("/")
+AUTH_TOKEN = os.environ.get("LLM_TODO_TOKEN", "").strip()
 
 CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -38,9 +44,12 @@ CONTENT_TYPES = {
 
 HORIZON_ORDER = ["today", "week", "month", "quarter", "year", "decade", "lifetime"]
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+REPEAT_OPTIONS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
 CURRENT_STATUSES = {"active", "waiting"}
 ARCHIVE_STATUSES = {"done", "dropped"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
+DATA_FILES = {TASKS_PATH, HISTORY_PATH}
+DATA_WRITE_CONTEXT = threading.local()
 
 
 def rel(path: Path) -> str:
@@ -54,6 +63,64 @@ def read_text(path: Path) -> str:
 def write_text(path: Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
+
+
+def clean_label(value: str) -> str:
+    return re.sub(r"[^a-z0-9_-]+", "-", value.lower()).strip("-")[:40] or "change"
+
+
+def backup_paths() -> list[Path]:
+    if not BACKUP_DIR.exists():
+        return []
+    return sorted(path for path in BACKUP_DIR.iterdir() if path.is_dir())
+
+
+def prune_backups() -> None:
+    for path in backup_paths()[:-10]:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def create_backup_snapshot(label: str = "change") -> Path:
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    target = BACKUP_DIR / f"{stamp}-{clean_label(label)}"
+    target.mkdir(parents=True, exist_ok=False)
+    for source in (TASKS_PATH, HISTORY_PATH):
+        if source.exists():
+            shutil.copy2(source, target / source.name)
+        else:
+            (target / f"{source.name}.missing").write_text("", encoding="utf-8")
+    metadata = {"created": datetime.now().isoformat(timespec="seconds"), "label": label}
+    (target / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    prune_backups()
+    return target
+
+
+@contextmanager
+def data_change(label: str = "change"):
+    depth = getattr(DATA_WRITE_CONTEXT, "depth", 0)
+    if depth == 0:
+        DATA_WRITE_CONTEXT.label = label
+        DATA_WRITE_CONTEXT.snapshot = None
+    DATA_WRITE_CONTEXT.depth = depth + 1
+    try:
+        yield
+    finally:
+        DATA_WRITE_CONTEXT.depth -= 1
+        if DATA_WRITE_CONTEXT.depth == 0:
+            DATA_WRITE_CONTEXT.label = ""
+            DATA_WRITE_CONTEXT.snapshot = None
+
+
+def ensure_data_backup(path: Path) -> None:
+    if path not in DATA_FILES:
+        return
+    depth = getattr(DATA_WRITE_CONTEXT, "depth", 0)
+    if depth > 0:
+        if getattr(DATA_WRITE_CONTEXT, "snapshot", None) is None:
+            DATA_WRITE_CONTEXT.snapshot = create_backup_snapshot(getattr(DATA_WRITE_CONTEXT, "label", "change"))
+        return
+    create_backup_snapshot(f"write-{path.stem}")
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, str], str]:
@@ -134,6 +201,70 @@ def normalize_tags(value: object) -> list[str]:
     return tags
 
 
+def normalize_repeat(value: object) -> str:
+    repeat = str(value if value is not None else "").strip().lower()
+    return repeat if repeat in REPEAT_OPTIONS else ""
+
+
+def parse_iso_date(value: object) -> date | None:
+    text = str(value if value is not None else "").strip()[:10]
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def add_months(day: date, months: int) -> date:
+    month_index = day.month - 1 + months
+    year = day.year + month_index // 12
+    month = month_index % 12 + 1
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, min(day.day, last_day))
+
+
+def advance_repeat_once(day: date, repeat: str) -> date:
+    if repeat == "daily":
+        return day + timedelta(days=1)
+    if repeat == "weekly":
+        return day + timedelta(days=7)
+    if repeat == "monthly":
+        return add_months(day, 1)
+    if repeat == "quarterly":
+        return add_months(day, 3)
+    if repeat == "yearly":
+        return add_months(day, 12)
+    return day
+
+
+def next_repeat_due(current_due: object, repeat: str) -> str:
+    today = datetime.now().date()
+    base = parse_iso_date(current_due) or today
+    next_due = advance_repeat_once(base, repeat)
+    while next_due <= today:
+        next_due = advance_repeat_once(next_due, repeat)
+    return next_due.isoformat()
+
+
+def next_repeating_task(task: dict) -> dict | None:
+    repeat = normalize_repeat(task.get("repeat"))
+    if not repeat or task.get("status") != "done":
+        return None
+    today = str(datetime.now().date())
+    next_task = dict(task)
+    next_task.update(
+        {
+            "id": new_task_id(),
+            "status": "active",
+            "due": next_repeat_due(task.get("due"), repeat),
+            "created": today,
+            "updated": today,
+        }
+    )
+    return normalize_task(next_task)
+
+
 def normalize_task(task: dict, default_status: str = "active") -> dict:
     today = str(datetime.now().date())
     status = task.get("status") if task.get("status") in TASK_STATUSES else default_status
@@ -150,6 +281,7 @@ def normalize_task(task: dict, default_status: str = "active") -> dict:
         "due": clean_text(task.get("due"), 20),
         "nextAction": clean_text(task.get("nextAction"), 220),
         "notes": clean_text(task.get("notes"), 500),
+        "repeat": normalize_repeat(task.get("repeat")),
         "created": clean_text(task.get("created"), 20, today),
         "updated": clean_text(task.get("updated"), 20, today),
     }
@@ -175,26 +307,34 @@ def load_tasks() -> list[dict]:
         else:
             current.append(task)
     if archived:
-        write_tasks_file(TASKS_PATH, current)
-        append_history(archived)
+        with data_change("migrate-archived-tasks"):
+            write_tasks_file(TASKS_PATH, current)
+            append_history(archived)
     return current
 
 
 def save_tasks(tasks: list[dict]) -> None:
     current: list[dict] = []
     archived: list[dict] = []
+    repeated: list[dict] = []
     for raw_task in tasks:
         task = normalize_task(raw_task)
         if task["status"] in ARCHIVE_STATUSES:
             archived.append(task)
+            next_task = next_repeating_task(task)
+            if next_task:
+                repeated.append(next_task)
         else:
             current.append(task)
-    write_tasks_file(TASKS_PATH, current)
-    if archived:
-        append_history(archived)
+    current.extend(repeated)
+    with data_change("save-tasks"):
+        write_tasks_file(TASKS_PATH, current)
+        if archived:
+            append_history(archived)
 
 
 def write_tasks_file(path: Path, tasks: list[dict]) -> None:
+    ensure_data_backup(path)
     write_text(path, json.dumps({"tasks": tasks}, ensure_ascii=False, indent=2) + "\n")
 
 
@@ -210,7 +350,8 @@ def save_history(tasks: list[dict]) -> None:
         if task["status"] not in ARCHIVE_STATUSES:
             task["status"] = "done"
         unique[task["id"]] = task
-    write_tasks_file(HISTORY_PATH, list(unique.values()))
+    with data_change("save-history"):
+        write_tasks_file(HISTORY_PATH, list(unique.values()))
 
 
 def append_history(tasks: list[dict]) -> None:
@@ -220,7 +361,8 @@ def append_history(tasks: list[dict]) -> None:
         if task["status"] not in ARCHIVE_STATUSES:
             task["status"] = "done"
         history[task["id"]] = task
-    write_tasks_file(HISTORY_PATH, list(history.values()))
+    with data_change("append-history"):
+        write_tasks_file(HISTORY_PATH, list(history.values()))
 
 
 def load_history_raw() -> list[dict]:
@@ -457,6 +599,7 @@ def create_task_from_message(message: str) -> dict:
         "due": today if horizon == "today" else "",
         "nextAction": "明确下一步动作" if len(title) < 12 else title,
         "notes": "由聊天创建。",
+        "repeat": "",
         "created": today,
         "updated": today,
     }
@@ -565,8 +708,8 @@ def context_package(messages: list[dict]) -> dict:
         "operationSchema": {
             "reply": "string",
             "operations": [
-                {"type": "create_task", "title": "string", "horizon": "week", "area": "custom area", "priority": "medium", "tags": ["string"], "nextAction": "string", "notes": "string"},
-                {"type": "update_task", "id": "task id", "status": "active|waiting|done|dropped", "tags": ["string"], "nextAction": "string"},
+                {"type": "create_task", "title": "string", "horizon": "week", "area": "custom area", "priority": "medium", "tags": ["string"], "nextAction": "string", "notes": "string", "repeat": ""},
+                {"type": "update_task", "id": "task id", "status": "active|waiting|done|dropped", "tags": ["string"], "nextAction": "string", "repeat": ""},
                 {"type": "append_log", "content": "string"},
             ],
         },
@@ -693,6 +836,7 @@ def apply_operations(operations: list[dict]) -> list[dict]:
                 "due": str(op.get("due", ""))[:20],
                 "nextAction": str(op.get("nextAction", ""))[:220],
                 "notes": str(op.get("notes", ""))[:500],
+                "repeat": normalize_repeat(op.get("repeat")),
                 "created": today,
                 "updated": today,
             }
@@ -710,6 +854,8 @@ def apply_operations(operations: list[dict]) -> list[dict]:
                         task["tags"] = normalize_tags(op.get("tags"))
                     if "area" in op:
                         task["area"] = normalize_area(op.get("area"), task.get("area", "life"))
+                    if "repeat" in op:
+                        task["repeat"] = normalize_repeat(op.get("repeat"))
                     task["updated"] = today
                     applied.append({"type": "update_task", "id": task["id"], "status": task["status"]})
                     changed = True
@@ -738,11 +884,11 @@ def dispatch_chat(payload: dict) -> dict:
     return result
 
 
-def create_task(payload: dict) -> dict:
+def task_from_payload(payload: dict) -> dict:
     today = str(datetime.now().date())
     raw_title = str(payload.get("title", "未命名任务")).strip()
     title = strip_task_metadata(raw_title)[:160] or raw_title[:160] or "未命名任务"
-    task = {
+    return {
         "id": new_task_id(),
         "title": title,
         "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped"} else "active",
@@ -753,9 +899,14 @@ def create_task(payload: dict) -> dict:
         "due": str(payload.get("due", "")).strip()[:20],
         "nextAction": str(payload.get("nextAction", "")).strip()[:220],
         "notes": str(payload.get("notes", "")).strip()[:500],
+        "repeat": normalize_repeat(payload.get("repeat")),
         "created": today,
         "updated": today,
     }
+
+
+def create_task(payload: dict) -> dict:
+    task = task_from_payload(payload)
     tasks = load_tasks()
     tasks.append(task)
     save_tasks(tasks)
@@ -797,20 +948,296 @@ def update_task(payload: dict) -> dict:
         updated["horizon"] = payload["horizon"]
     if payload.get("priority") in {"high", "medium", "low"}:
         updated["priority"] = payload["priority"]
+    if "repeat" in payload:
+        updated["repeat"] = normalize_repeat(payload.get("repeat"))
     updated["updated"] = today
 
-    if source == "history":
-        history = [task for task in history if task.get("id") != task_id]
-        if updated["status"] in CURRENT_STATUSES:
-            tasks.append(updated)
+    with data_change("update-task"):
+        if source == "history":
+            history = [task for task in history if task.get("id") != task_id]
+            if updated["status"] in CURRENT_STATUSES:
+                tasks.append(updated)
+            else:
+                history.append(updated)
+            save_history(history)
+            save_tasks(tasks)
         else:
-            history.append(updated)
-        save_history(history)
-        save_tasks(tasks)
-    else:
-        save_tasks(tasks)
+            save_tasks(tasks)
     append_log(f"更新任务：{updated['title']} → {updated['status']}")
     return {"task": updated, "state": state_payload()}
+
+
+def filter_values(payload: dict, key: str) -> set[str]:
+    value = payload.get(key)
+    if value in (None, "", "all"):
+        return set()
+    raw_values = value if isinstance(value, list) else [value]
+    return {str(item).strip().lower() for item in raw_values if str(item).strip() and str(item).strip().lower() != "all"}
+
+
+def search_tasks(payload: dict) -> dict:
+    query = str(payload.get("query", "")).strip().lower()
+    status_filter = filter_values(payload, "status")
+    horizon_filter = filter_values(payload, "horizon")
+    area_filter = filter_values(payload, "area")
+    priority_filter = filter_values(payload, "priority")
+    tag_filter = filter_values(payload, "tag")
+
+    matches = []
+    for task in load_tasks():
+        tags = {str(tag).lower() for tag in task.get("tags", [])}
+        if query and query not in task.get("title", "").lower():
+            continue
+        if status_filter and task.get("status", "").lower() not in status_filter:
+            continue
+        if horizon_filter and task.get("horizon", "").lower() not in horizon_filter:
+            continue
+        if area_filter and task.get("area", "").lower() not in area_filter:
+            continue
+        if priority_filter and task.get("priority", "").lower() not in priority_filter:
+            continue
+        if tag_filter and not tags.intersection(tag_filter):
+            continue
+        matches.append(task)
+    return {"tasks": sorted_tasks(matches), "count": len(matches)}
+
+
+def batch_tasks(payload: dict) -> dict:
+    tasks = load_tasks()
+    history = load_history()
+    created: list[dict] = []
+    updated: list[dict] = []
+    changed_tasks = False
+    changed_history = False
+    today = str(datetime.now().date())
+
+    creates = payload.get("create", payload.get("creates", []))
+    if isinstance(creates, dict):
+        creates = [creates]
+    if not isinstance(creates, list):
+        creates = []
+    for item in creates:
+        if isinstance(item, dict):
+            task = task_from_payload(item)
+            tasks.append(task)
+            created.append(task)
+            changed_tasks = True
+
+    updates: list[dict] = []
+    status_payload = payload.get("updateStatus") if isinstance(payload.get("updateStatus"), dict) else {}
+    ids = payload.get("ids", status_payload.get("ids", []))
+    status = payload.get("status", status_payload.get("status", ""))
+    if isinstance(ids, str):
+        ids = [ids]
+    if isinstance(ids, list) and status in TASK_STATUSES:
+        updates.extend({"id": str(task_id), "status": status} for task_id in ids)
+    if isinstance(payload.get("updates"), list):
+        updates.extend(item for item in payload["updates"] if isinstance(item, dict))
+
+    for item in updates:
+        task_id = str(item.get("id", ""))
+        status = item.get("status")
+        if status not in TASK_STATUSES:
+            continue
+        target = None
+        source = "tasks"
+        for task in tasks:
+            if task.get("id") == task_id:
+                target = task
+                break
+        if target is None:
+            source = "history"
+            for task in history:
+                if task.get("id") == task_id:
+                    target = task
+                    break
+        if target is None:
+            continue
+        target["status"] = status
+        target["updated"] = today
+        updated.append({"id": target["id"], "status": target["status"], "title": target["title"]})
+        if source == "history":
+            history = [task for task in history if task.get("id") != task_id]
+            if target["status"] in CURRENT_STATUSES:
+                tasks.append(target)
+                changed_tasks = True
+            else:
+                history.append(target)
+            changed_history = True
+        else:
+            changed_tasks = True
+
+    with data_change("batch-tasks"):
+        if changed_history:
+            save_history(history)
+        if changed_tasks:
+            save_tasks(tasks)
+
+    if created:
+        append_log(f"批量新增 {len(created)} 个任务")
+    if updated:
+        append_log(f"批量更新 {len(updated)} 个任务状态")
+    return {"created": created, "updated": updated, "state": state_payload()}
+
+
+def reminder_task(task: dict) -> dict:
+    return {
+        "id": task.get("id", ""),
+        "title": task.get("title", ""),
+        "due": task.get("due", ""),
+        "priority": task.get("priority", ""),
+        "horizon": task.get("horizon", ""),
+        "area": task.get("area", ""),
+    }
+
+
+def reminders_payload() -> dict:
+    today = datetime.now().date()
+    due_today = []
+    overdue = []
+    for task in sorted_tasks(load_tasks()):
+        if task.get("priority") != "high" or task.get("status") not in CURRENT_STATUSES:
+            continue
+        due = parse_iso_date(task.get("due"))
+        if not due:
+            continue
+        if due < today:
+            overdue.append(reminder_task(task))
+        elif due == today:
+            due_today.append(reminder_task(task))
+    return {"today": due_today, "overdue": overdue, "count": len(due_today) + len(overdue)}
+
+
+def task_completion_date(task: dict) -> date | None:
+    return parse_iso_date(task.get("updated")) or parse_iso_date(task.get("created"))
+
+
+def max_completion_streak(done_tasks: list[dict]) -> int:
+    days = sorted({day for task in done_tasks if (day := task_completion_date(task))})
+    best = 0
+    current = 0
+    previous = None
+    for day in days:
+        if previous is None or day == previous + timedelta(days=1):
+            current += 1
+        else:
+            current = 1
+        best = max(best, current)
+        previous = day
+    return best
+
+
+def character_payload() -> dict:
+    tasks = load_tasks()
+    history = load_history()
+    done = [task for task in history if task.get("status") == "done"]
+    done_count = len(done)
+    level = done_count // 10 + 1
+    xp = done_count % 10
+
+    area_counts = {
+        "system": len([task for task in done if task.get("area") == "system"]),
+        "learning": len([task for task in done if task.get("area") == "learning"]),
+        "work": len([task for task in done if task.get("area") == "work"]),
+        "life": len([task for task in done if task.get("area") == "life"]),
+    }
+    scale = max(10, *area_counts.values())
+
+    high_done_with_due = [task for task in done if task.get("priority") == "high" and parse_iso_date(task.get("due"))]
+    high_done_on_time = [
+        task
+        for task in high_done_with_due
+        if task_completion_date(task) and task_completion_date(task) <= parse_iso_date(task.get("due"))
+    ]
+    efficiency = round(len(high_done_on_time) / len(high_done_with_due) * 100) if high_done_with_due else 0
+
+    today = datetime.now().date()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    def in_this_week(day: date | None) -> bool:
+        return bool(day and week_start <= day <= week_end)
+
+    week_done = [task for task in done if in_this_week(task_completion_date(task))]
+    week_total_ids = set()
+    for task in tasks + history:
+        if in_this_week(parse_iso_date(task.get("due"))) or in_this_week(parse_iso_date(task.get("created"))) or in_this_week(parse_iso_date(task.get("updated"))):
+            week_total_ids.add(task.get("id"))
+    focus = round(len(week_done) / len(week_total_ids) * 100) if week_total_ids else 0
+
+    completion_days: dict[str, int] = {}
+    for task in done:
+        day = task_completion_date(task)
+        if day:
+            key = day.isoformat()
+            completion_days[key] = completion_days.get(key, 0) + 1
+    streak = max_completion_streak(done)
+
+    achievements = [
+        {
+            "id": "first_done",
+            "title": "首次完成任务",
+            "description": "完成任意一个任务。",
+            "unlocked": done_count >= 1,
+        },
+        {
+            "id": "streak_7",
+            "title": "连续 7 天完成任务",
+            "description": f"当前历史最长连续 {streak} 天。",
+            "unlocked": streak >= 7,
+        },
+        {
+            "id": "single_day_5",
+            "title": "单日完成 5 个任务",
+            "description": f"当前单日最高 {max(completion_days.values(), default=0)} 个。",
+            "unlocked": max(completion_days.values(), default=0) >= 5,
+        },
+        {
+            "id": "high_priority_punctual",
+            "title": "高优先级准时者",
+            "description": "至少 5 个高优先级任务按时完成率达到 80%。",
+            "unlocked": len(high_done_with_due) >= 5 and efficiency >= 80,
+        },
+        {
+            "id": "system_builder",
+            "title": "系统建造者",
+            "description": "完成 10 个 system 领域任务。",
+            "unlocked": area_counts["system"] >= 10,
+        },
+    ]
+
+    return {
+        "name": "冒险者",
+        "level": level,
+        "experience": {"current": xp, "next": 10, "totalCompleted": done_count, "percent": xp * 10},
+        "abilities": [
+            {"id": "engineering", "name": "🏗️ 工程力", "value": round(area_counts["system"] / scale * 100), "raw": area_counts["system"], "unit": "项", "description": "system 领域完成任务数"},
+            {"id": "learning", "name": "📚 学习力", "value": round(area_counts["learning"] / scale * 100), "raw": area_counts["learning"], "unit": "项", "description": "learning 领域完成任务数"},
+            {"id": "execution", "name": "💼 执行力", "value": round(area_counts["work"] / scale * 100), "raw": area_counts["work"], "unit": "项", "description": "work 领域完成任务数"},
+            {"id": "life", "name": "🌱 生活力", "value": round(area_counts["life"] / scale * 100), "raw": area_counts["life"], "unit": "项", "description": "life 领域完成任务数"},
+            {"id": "efficiency", "name": "⚡ 效率值", "value": efficiency, "raw": efficiency, "unit": "%", "description": f"{len(high_done_on_time)}/{len(high_done_with_due)} 个高优先级任务按时完成"},
+            {"id": "focus", "name": "🎯 专注度", "value": focus, "raw": focus, "unit": "%", "description": f"本周完成 {len(week_done)} / 本周总任务 {len(week_total_ids)}"},
+        ],
+        "achievements": achievements,
+        "week": {"start": week_start.isoformat(), "end": week_end.isoformat(), "done": len(week_done), "total": len(week_total_ids)},
+    }
+
+
+def undo_last_change() -> dict:
+    backups = backup_paths()
+    if not backups:
+        raise ValueError("no backups available")
+    target = backups[-1]
+    create_backup_snapshot("pre-undo")
+    for destination in (TASKS_PATH, HISTORY_PATH):
+        source = target / destination.name
+        if source.exists():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+        else:
+            write_text(destination, json.dumps({"tasks": []}, ensure_ascii=False, indent=2) + "\n")
+    append_log(f"撤销任务数据变更：恢复 {target.name}")
+    return {"restored": target.name, "state": state_payload()}
 
 
 def file_lines(path: Path) -> int:
@@ -840,10 +1267,12 @@ def directory_tree() -> str:
     llm_todo_server.py
   web/
     index.html
+    character.html
     design.html
     styles.css
     shared.js
     app.js
+    character.js
     design.js"""
 
 
@@ -851,10 +1280,12 @@ def design_payload() -> dict:
     files = [
         ("scripts/llm_todo_server.py", "本地 HTTP API、任务读写、聊天分发、OpenAI/Agent Chat 边界、设计数据"),
         ("web/index.html", "任务规划工作台结构，首屏含任务、规划尺度和聊天窗口"),
+        ("web/character.html", "角色概览页面结构，展示等级、能力值和成就墙"),
         ("web/design.html", "设计文档网站结构"),
         ("web/styles.css", "中文任务工作台视觉系统和响应式布局"),
         ("web/shared.js", "API 客户端和 Markdown 渲染器"),
         ("web/app.js", "任务列表、文档阅读、聊天、模型提供方选择和快速创建交互"),
+        ("web/character.js", "角色页面数据加载、能力雷达图和成就渲染"),
         ("web/design.js", "设计图、风险图、职责表和评审历史"),
         ("data/tasks.json", "当前任务事实源，只保存 active/waiting"),
         ("data/history.json", "已完成和已放弃任务归档"),
@@ -881,7 +1312,8 @@ def design_payload() -> dict:
             "horizonFlow": ["人生价值", "十年方向", "年度主题", "季度成果", "本周下一步", "今天执行"],
             "requestResponse": ["浏览器打开首页", "请求 /api/state", "渲染工作台", "提交 /api/chat", "组装任务上下文", "应用安全操作", "返回最新状态"],
             "codeDeps": [
-                {"from": "web/app.js", "to": "scripts/llm_todo_server.py", "label": "/api/state /api/chat /api/tasks/update"},
+                {"from": "web/app.js", "to": "scripts/llm_todo_server.py", "label": "/api/state /api/chat /api/tasks/search /api/tasks/batch /api/tasks/update"},
+                {"from": "web/character.js", "to": "scripts/llm_todo_server.py", "label": "/api/character /api/state /api/history"},
                 {"from": "scripts/llm_todo_server.py", "to": "data/tasks.json", "label": "读写当前任务事实源"},
                 {"from": "scripts/llm_todo_server.py", "to": "data/history.json", "label": "归档 done/dropped 任务"},
                 {"from": "scripts/llm_todo_server.py", "to": "todo/", "label": "读取规划文档并追加日志或评审"},
@@ -932,6 +1364,8 @@ def save_review(payload: dict) -> dict:
 def safe_web_path(path: str) -> Path:
     if path == "/":
         return WEB / "index.html"
+    if path == "/character/":
+        return WEB / "character.html"
     if path == "/design/":
         return WEB / "design.html"
     target = (WEB / path.lstrip("/")).resolve()
@@ -965,8 +1399,25 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def authorized(self, path: str) -> bool:
+        if not path.startswith("/api/") or not AUTH_TOKEN:
+            return True
+        expected = f"Bearer {AUTH_TOKEN}"
+        if self.headers.get("Authorization", "") == expected:
+            return True
+        self.send_response(401)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("WWW-Authenticate", 'Bearer realm="LLM Todo"')
+        data = json.dumps({"error": "unauthorized"}, ensure_ascii=False).encode("utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+        return False
+
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
+        if not self.authorized(parsed.path):
+            return
         query = urllib.parse.parse_qs(parsed.query)
         try:
             if parsed.path == "/api/health":
@@ -979,6 +1430,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"tasks": sorted_tasks(load_tasks())})
             elif parsed.path == "/api/history":
                 self.send_json({"tasks": sorted_history(load_history())})
+            elif parsed.path == "/api/reminders":
+                self.send_json(reminders_payload())
+            elif parsed.path == "/api/character":
+                self.send_json(character_payload())
             elif parsed.path == "/api/docs":
                 self.send_json({"docs": doc_records()})
             elif parsed.path == "/api/doc":
@@ -998,6 +1453,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
+        if not self.authorized(parsed.path):
+            return
         size = int(self.headers.get("Content-Length", "0") or "0")
         try:
             payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
@@ -1007,6 +1464,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(create_task(payload))
             elif parsed.path == "/api/tasks/update":
                 self.send_json(update_task(payload))
+            elif parsed.path == "/api/tasks/search":
+                self.send_json(search_tasks(payload))
+            elif parsed.path == "/api/tasks/batch":
+                self.send_json(batch_tasks(payload))
+            elif parsed.path == "/api/undo":
+                self.send_json(undo_last_change())
             elif parsed.path == "/api/review/save":
                 self.send_json(save_review(payload))
             else:
@@ -1019,6 +1482,7 @@ def main() -> None:
     port = int(os.environ.get("LLM_TODO_PORT", "8720"))
     host = os.environ.get("LLM_TODO_HOST", "127.0.0.1")
     DATA.mkdir(parents=True, exist_ok=True)
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     REVIEW_DIR.mkdir(parents=True, exist_ok=True)
     ThreadingHTTPServer((host, port), Handler).serve_forever()
 

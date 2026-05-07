@@ -41,6 +41,174 @@
       "notes": "",
       "created": "2026-05-07",
       "updated": "2026-05-07"
+    },
+    {
+      "id": "task-20260508-073244-7ae502",
+      "title": "LLM Todo 接入真实 LLM provider",
+      "status": "active",
+      "horizon": "week",
+      "area": "system",
+      "priority": "high",
+      "tags": [
+        "llm-todo",
+        "开发"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-777e61",
+      "title": "LLM Todo 上云部署",
+      "status": "active",
+      "horizon": "month",
+      "area": "system",
+      "priority": "high",
+      "tags": [
+        "llm-todo",
+        "部署"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-dff472",
+      "title": "优化深度研究 Skill",
+      "status": "active",
+      "horizon": "month",
+      "area": "system",
+      "priority": "medium",
+      "tags": [
+        "技能优化"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-75b5b6",
+      "title": "搭建 LLM Wiki 知识库",
+      "status": "active",
+      "horizon": "quarter",
+      "area": "learning",
+      "priority": "medium",
+      "tags": [
+        "知识管理"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-9a3aa4",
+      "title": "播客/语音内容启动",
+      "status": "active",
+      "horizon": "quarter",
+      "area": "work",
+      "priority": "medium",
+      "tags": [
+        "内容创作"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-1360fd",
+      "title": "提交 iOS 应用到 App Store",
+      "status": "active",
+      "horizon": "quarter",
+      "area": "work",
+      "priority": "medium",
+      "tags": [
+        "iOS",
+        "发布"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-5c62ad",
+      "title": "Todoist 数据迁移到 LLM Todo",
+      "status": "active",
+      "horizon": "week",
+      "area": "system",
+      "priority": "medium",
+      "tags": [
+        "llm-todo",
+        "迁移"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-f0ce6f",
+      "title": "LLM Todo 定时任务/提醒推送",
+      "status": "active",
+      "horizon": "month",
+      "area": "system",
+      "priority": "medium",
+      "tags": [
+        "llm-todo",
+        "开发"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-073254-72a73b",
+      "title": "LLM Todo 统计面板优化",
+      "status": "active",
+      "horizon": "month",
+      "area": "system",
+      "priority": "low",
+      "tags": [
+        "llm-todo",
+        "优化"
+      ],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
+    },
+    {
+      "id": "task-20260508-074147-7dd314",
+      "title": "开发能力地图模块（龙虾合伙人需求）",
+      "status": "active",
+      "horizon": "week",
+      "area": "system",
+      "priority": "high",
+      "tags": [
+        "llm-todo",
+        "能力地图",
+        "开发"
+      ],
+      "due": "2026-05-16",
+      "nextAction": "Codex 按需求文档开发能力地图后端+前端",
+      "notes": "需求文档：docs/CAPABILITY_MAP_REQUIREMENT.md。含 capabilities.json + agents.json + roadmap.json + 7个API + /map前端页面",
+      "created": "2026-05-08",
+      "updated": "2026-05-08"
     }
   ]
 }
