@@ -2,8 +2,16 @@ const statusLabels = { active: "进行中", waiting: "等待中", done: "已完�
 const horizonLabels = { today: "今天", week: "本周", month: "本月", quarter: "季度", year: "年度", decade: "十年", lifetime: "人生" };
 const areaLabels = { system: "系统", life: "生活", learning: "学习", work: "工作" };
 const priorityLabels = { high: "高", medium: "中", low: "低" };
-let characterState = { character: null, state: null, history: { tasks: [] } };
-let selectedAbilityId = "";
+const skillLineOrder = ["content", "invest", "system", "life", "growth"];
+
+let characterState = {
+  character: null,
+  state: null,
+  history: { tasks: [] },
+  skillTree: { lines: [], skills: [], kpis: [], levelLegend: {} },
+  activeLineId: "",
+  selectedSkillId: "",
+};
 
 const achievementIcons = {
   first_done: "✓",
@@ -13,10 +21,13 @@ const achievementIcons = {
   system_builder: "建",
 };
 
-const abilityTierLabels = {
-  foundation: "基础能力",
-  execution: "执行能力",
-  output: "输出能力",
+const fallbackLevelLegend = {
+  0: { label: "未解锁", marker: "🔒", className: "locked" },
+  1: { label: "入门", marker: "🌱", className: "beginner" },
+  2: { label: "可用", marker: "🔄", className: "usable" },
+  3: { label: "熟练", marker: "✅", className: "proficient" },
+  4: { label: "精通", marker: "⭐", className: "master" },
+  5: { label: "大师", marker: "🏆", className: "grandmaster" },
 };
 
 function clampPercent(value) {
@@ -33,22 +44,99 @@ function meterStyle(percent) {
   return `width: ${clampPercent(percent)}%`;
 }
 
-function starRating(level, maxLevel = 5) {
-  const max = Math.max(1, Number(maxLevel) || 5);
-  const count = Math.max(0, Math.min(max, Number(level) || 0));
-  return `${"★".repeat(count)}${"☆".repeat(max - count)}`;
-}
-
-function safeTasks(value) {
+function safeItems(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function abilityList(character) {
-  return safeTasks(character.abilities);
+function cssEscape(value) {
+  if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(String(value));
+  return String(value).replace(/"/g, '\\"');
+}
+
+function levelMeta(skill) {
+  const level = Math.max(0, Math.min(5, Number(skill?.level) || 0));
+  const legend = characterState.skillTree.levelLegend || characterState.character?.levelLegend || fallbackLevelLegend;
+  return legend[level] || legend[String(level)] || fallbackLevelLegend[level] || fallbackLevelLegend[0];
+}
+
+function levelText(skill) {
+  const level = Math.max(0, Math.min(5, Number(skill?.level) || 0));
+  const meta = levelMeta(skill);
+  return `${meta.marker || ""} Lv.${level} ${meta.label || ""}`.trim();
+}
+
+function abilityList(character = characterState.character) {
+  if (!character) return [];
+  const explicit = safeItems(character.abilityList);
+  if (explicit.length) return explicit;
+  const abilities = safeItems(character.abilities);
+  if (abilities.some((item) => Array.isArray(item.skills))) {
+    return abilities.flatMap((line) => safeItems(line.skills));
+  }
+  return abilities;
+}
+
+function skillLines() {
+  const fromTree = safeItems(characterState.skillTree.lines);
+  if (fromTree.length) return fromTree;
+  const fromCharacter = safeItems(characterState.character?.abilityLines);
+  if (fromCharacter.length) return fromCharacter;
+  const skillTrees = characterState.character?.skillTrees || {};
+  return skillLineOrder.map((id) => skillTrees[id]).filter(Boolean);
+}
+
+function activeLine() {
+  const lines = skillLines();
+  return lines.find((line) => line.id === characterState.activeLineId) || lines[0] || null;
+}
+
+function skillsForLine(line) {
+  const skills = safeItems(line?.skills).map((skill, index) => ({ ...skill, _order: index }));
+  const byId = new Map(skills.map((skill) => [skill.id, skill]));
+  const depthCache = new Map();
+
+  function depthFor(skill, visiting = new Set()) {
+    if (!skill?.id) return 0;
+    if (depthCache.has(skill.id)) return depthCache.get(skill.id);
+    if (Number.isFinite(Number(skill.depth))) {
+      const depth = Number(skill.depth);
+      depthCache.set(skill.id, depth);
+      return depth;
+    }
+    if (visiting.has(skill.id)) return 0;
+    visiting.add(skill.id);
+    const parent = byId.get(skill.parentId);
+    const depth = parent ? depthFor(parent, visiting) + 1 : 0;
+    depthCache.set(skill.id, depth);
+    return depth;
+  }
+
+  return skills.map((skill) => ({ ...skill, depth: depthFor(skill) }));
+}
+
+function edgesForLine(line, skills) {
+  const explicit = safeItems(line?.edges);
+  if (explicit.length) return explicit;
+  const validIds = new Set(skills.map((skill) => skill.id).filter(Boolean));
+  const edges = [];
+  const seen = new Set();
+  skills.forEach((skill) => {
+    const dependencies = safeItems(skill.dependencies);
+    if (skill.parentId && !dependencies.includes(skill.parentId)) dependencies.unshift(skill.parentId);
+    dependencies.forEach((dependency) => {
+      if (!validIds.has(dependency) || dependency === skill.id) return;
+      const type = dependency === skill.parentId ? "parent" : "dependency";
+      const key = `${dependency}::${skill.id}::${type}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      edges.push({ from: dependency, to: skill.id, type });
+    });
+  });
+  return edges;
 }
 
 function allKnownTasks(state, history) {
-  return safeTasks(state.tasks).concat(safeTasks(history.tasks));
+  return safeItems(state?.tasks).concat(safeItems(history?.tasks));
 }
 
 function taskMap(state, history) {
@@ -57,13 +145,6 @@ function taskMap(state, history) {
     if (task.id) map.set(task.id, task);
   });
   return map;
-}
-
-function sortAbilities(abilities) {
-  return [...abilities].sort((a, b) => {
-    const tierOrder = { foundation: 0, execution: 1, output: 2 };
-    return (tierOrder[a.tier] ?? 9) - (tierOrder[b.tier] ?? 9) || (b.level || 0) - (a.level || 0) || (b.xp || 0) - (a.xp || 0);
-  });
 }
 
 function taskDate(task) {
@@ -94,7 +175,7 @@ function taskMeta(task, includeStatus = false) {
 }
 
 function taskTags(task) {
-  const tags = safeTasks(task.tags).slice(0, 4);
+  const tags = safeItems(task.tags).slice(0, 4);
   if (tags.length === 0) return "";
   return `<div class="character-task-tags">${tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}</div>`;
 }
@@ -113,17 +194,6 @@ function renderTaskCard(task, includeStatus = false) {
   `;
 }
 
-function countArea(tasks, area) {
-  return tasks.filter((task) => task.area === area).length;
-}
-
-function countResearchTasks(tasks) {
-  return tasks.filter((task) => {
-    const title = `${task.title || ""} ${task.notes || ""} ${safeTasks(task.tags).join(" ")}`;
-    return task.area === "learning" || /研究|调研|学习|阅读|知识|wiki/i.test(title);
-  }).length;
-}
-
 function renderExperience(experience) {
   const current = Number(experience.current) || 0;
   const next = Number(experience.next) || 0;
@@ -140,7 +210,7 @@ function renderProfile(character, state) {
   const experience = character.experience || {};
   const week = character.week || {};
   const level = Number(character.level) || 1;
-  const activeTasks = safeTasks(state.tasks).filter((task) => task.status === "active");
+  const activeTasks = safeItems(state.tasks).filter((task) => task.status === "active");
 
   setText("character-name", character.name || "效率管家");
   setText("character-level", `Lv. ${formatCount(level, "1")}`);
@@ -152,148 +222,244 @@ function renderProfile(character, state) {
 }
 
 function renderAbilityTags(character) {
-  const tags = safeTasks(character.coreCapabilities).length
-    ? safeTasks(character.coreCapabilities)
-    : sortAbilities(abilityList(character)).slice(0, 5);
+  const tags = safeItems(character.coreCapabilities).length
+    ? safeItems(character.coreCapabilities)
+    : [...abilityList(character)].sort((a, b) => (b.level || 0) - (a.level || 0) || (b.xp || 0) - (a.xp || 0)).slice(0, 5);
 
-  document.getElementById("ability-tags").innerHTML = tags.length === 0
-    ? '<p class="empty">暂无能力数据。</p>'
-    : tags
+  document.getElementById("ability-tags").innerHTML =
+    tags.length === 0
+      ? '<p class="empty">暂无能力数据。</p>'
+      : tags
+          .map(
+            (ability) => `
+              <article class="ability-tag">
+                <span>${escapeHtml(ability.icon || "✓")}</span>
+                <div>
+                  <strong>${escapeHtml(ability.title || ability.name || "未命名能力")}</strong>
+                  <small>${escapeHtml(levelText(ability))} · ${Number(ability.relatedCount) || 0} 个关联任务</small>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+}
+
+function renderSkillKpis() {
+  const kpis = safeItems(characterState.skillTree.kpis).length ? safeItems(characterState.skillTree.kpis) : safeItems(characterState.character?.skillTreeKpis);
+  const summary = characterState.skillTree.summary || characterState.character?.skillTreeSummary || {};
+  const items = kpis.length
+    ? kpis
+    : [
+        { id: "total", label: "技能节点", value: String(summary.total || abilityList().length || 0), note: "已纳入树结构" },
+        { id: "locked", label: "未解锁", value: String(summary.locked || 0), note: "灰色节点" },
+        { id: "active", label: "进行中", value: String(summary.inProgress || 0), note: "蓝色节点" },
+        { id: "mastered", label: "精通", value: String(summary.mastered || 0), note: "金色节点" },
+      ];
+
+  document.getElementById("skill-kpis").innerHTML = items
     .map(
-      (ability) => `
-        <article class="ability-tag">
-          <span>${escapeHtml(ability.icon || "✓")}</span>
-          <div>
-            <strong>${escapeHtml(ability.title || ability.name || "未命名能力")}</strong>
-            <small>${escapeHtml(starRating(ability.level, ability.maxLevel))} · ${Number(ability.relatedCount) || 0} 个关联任务</small>
-          </div>
+      (item) => `
+        <article class="skill-kpi-card">
+          <span>${escapeHtml(item.label || item.id)}</span>
+          <strong>${escapeHtml(item.value ?? "--")}</strong>
+          <small>${escapeHtml(item.note || "")}</small>
         </article>
       `,
     )
     .join("");
 }
 
-function renderSkillTree(character) {
-  const abilities = sortAbilities(abilityList(character));
-  if (abilities.length === 0) {
-    document.getElementById("skill-tree").innerHTML = '<p class="empty">暂无能力树数据。</p>';
+function renderSkillTabs() {
+  const lines = skillLines();
+  if (!characterState.activeLineId || !lines.some((line) => line.id === characterState.activeLineId)) {
+    characterState.activeLineId = lines[0]?.id || "";
+  }
+  document.getElementById("skill-tree-tabs").innerHTML =
+    lines.length === 0
+      ? ""
+      : lines
+          .map((line) => {
+            const active = line.id === characterState.activeLineId;
+            const summary = line.summary || {};
+            return `
+              <button type="button" class="${active ? "active" : ""}" data-line="${escapeHtml(line.id)}" aria-pressed="${active ? "true" : "false"}">
+                <span>${escapeHtml(line.icon || "")}</span>
+                <strong>${escapeHtml(line.name || line.id)}</strong>
+                <small>${Number(summary.total) || safeItems(line.skills).length} 节点</small>
+              </button>
+            `;
+          })
+          .join("");
+}
+
+function renderSkillTree() {
+  const line = activeLine();
+  const container = document.getElementById("skill-tree");
+  if (!line) {
+    container.innerHTML = '<p class="empty">暂无技能树数据。</p>';
     document.getElementById("ability-detail").innerHTML = "";
     return;
   }
-  if (!selectedAbilityId || !abilities.some((ability) => ability.id === selectedAbilityId)) {
-    selectedAbilityId = safeTasks(character.coreCapabilities)[0]?.id || abilities[0].id;
-  }
-  const grouped = abilities.reduce((acc, ability) => {
-    const tier = ability.tier || "execution";
-    if (!acc[tier]) acc[tier] = [];
-    acc[tier].push(ability);
-    return acc;
-  }, {});
-  const tiers = ["foundation", "execution", "output"].filter((tier) => grouped[tier]?.length);
 
-  document.getElementById("skill-tree").innerHTML = `
-    <svg id="skill-tree-links" class="skill-tree-links" aria-hidden="true"></svg>
-    <div class="skill-tree-columns">
-      ${tiers
-        .map(
-          (tier) => `
-            <section class="skill-tier">
-              <h3>${escapeHtml(abilityTierLabels[tier] || tier)}</h3>
-              <div>
-                ${grouped[tier]
-                  .map((ability) => {
-                    const active = ability.id === selectedAbilityId;
-                    return `
-                      <button type="button" class="ability-node ${active ? "active" : ""}" data-ability="${escapeHtml(ability.id)}" data-ability-node="${escapeHtml(ability.id)}" aria-expanded="${active ? "true" : "false"}">
-                        <span class="ability-node-icon">${escapeHtml(ability.icon || "✓")}</span>
-                        <span>
-                          <strong>${escapeHtml(ability.title || ability.name || ability.id)}</strong>
-                          <small>${escapeHtml(starRating(ability.level, ability.maxLevel))} · ${Number(ability.xp) || 0} XP</small>
-                        </span>
-                      </button>
-                    `;
-                  })
-                  .join("")}
-              </div>
-            </section>
-          `,
-        )
-        .join("")}
+  const skills = skillsForLine(line);
+  if (!characterState.selectedSkillId || !skills.some((skill) => skill.id === characterState.selectedSkillId)) {
+    characterState.selectedSkillId = skills.find((skill) => !skill.parentId)?.id || skills[0]?.id || "";
+  }
+
+  const depthValues = [...new Set(skills.map((skill) => skill.depth))].sort((a, b) => a - b);
+  const columns = depthValues.map((depth) => skills.filter((skill) => skill.depth === depth).sort((a, b) => a._order - b._order));
+
+  container.innerHTML = `
+    <div class="skill-tree" data-active-line="${escapeHtml(line.id)}">
+      <svg id="skill-tree-links" class="skill-tree-links" aria-hidden="true"></svg>
+      <div class="skill-tree-columns" style="grid-template-columns: repeat(${Math.max(1, columns.length)}, minmax(150px, 1fr))">
+        ${columns
+          .map(
+            (items, columnIndex) => `
+              <section class="skill-tier">
+                <h3>${columnIndex === 0 ? "主干" : columnIndex === 1 ? "分支" : `第 ${columnIndex + 1} 层`}</h3>
+                <div>
+                  ${items
+                    .map((skill) => {
+                      const active = skill.id === characterState.selectedSkillId;
+                      const meta = levelMeta(skill);
+                      return `
+                        <button type="button" class="ability-node level-${escapeHtml(meta.className || "locked")} ${active ? "active" : ""}" data-skill="${escapeHtml(skill.id)}" data-skill-node="${escapeHtml(skill.id)}" aria-expanded="${active ? "true" : "false"}">
+                          <span class="ability-node-icon">${escapeHtml(skill.icon || "✓")}</span>
+                          <span>
+                            <strong>${escapeHtml(skill.name || skill.title || skill.id)}</strong>
+                            <small>${escapeHtml(levelText(skill))} · ${Number(skill.relatedCount) || 0} 任务</small>
+                          </span>
+                        </button>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </section>
+            `,
+          )
+          .join("")}
+      </div>
     </div>
   `;
-  renderAbilityDetail();
+
+  renderSkillDetail(line, skills);
   requestAnimationFrame(drawSkillLinks);
 }
 
-function renderAbilityDetail() {
-  const { character, state, history } = characterState;
-  if (!character || !state) return;
-  const ability = abilityList(character).find((item) => item.id === selectedAbilityId) || abilityList(character)[0];
-  const tasksById = taskMap(state, history);
-  if (!ability) {
-    document.getElementById("ability-detail").innerHTML = "";
+function dependencyNames(skill, skills) {
+  const byId = new Map(skills.map((item) => [item.id, item]));
+  return safeItems(skill.dependencies)
+    .map((id) => byId.get(id)?.name || id)
+    .filter(Boolean);
+}
+
+function renderSkillDetail(line, skills) {
+  const skill = skills.find((item) => item.id === characterState.selectedSkillId) || skills[0];
+  const detail = document.getElementById("ability-detail");
+  if (!skill) {
+    detail.innerHTML = "";
     return;
   }
-  const relatedTasks = safeTasks(ability.relatedTasks)
+
+  const { state, history } = characterState;
+  const tasksById = taskMap(state, history);
+  const relatedTasks = safeItems(skill.relatedTasks)
     .map((id) => tasksById.get(id))
     .filter(Boolean)
     .sort((a, b) => taskDate(b).localeCompare(taskDate(a)))
     .slice(0, 6);
-  document.getElementById("ability-detail").innerHTML = `
-    <div class="ability-detail-head">
-      <div>
-        <h3>${escapeHtml(ability.name || ability.title || ability.id)}</h3>
-        <p>${escapeHtml(ability.description || "")}</p>
+  const children = skills.filter((item) => item.parentId === skill.id);
+  const dependents = skills.filter((item) => safeItems(item.dependencies).includes(skill.id) && item.parentId !== skill.id);
+  const dependencies = dependencyNames(skill, skills);
+  const conditions = safeItems(skill.upgradeConditions);
+
+  detail.innerHTML = `
+    <article class="ability-detail">
+      <div class="ability-detail-head">
+        <div>
+          <h3>${escapeHtml(skill.icon || "")} ${escapeHtml(skill.name || skill.title || skill.id)}</h3>
+          <p>${escapeHtml(skill.notes || skill.description || "")}</p>
+        </div>
+        <span>${escapeHtml(levelText(skill))}</span>
       </div>
-      <span>${escapeHtml(starRating(ability.level, ability.maxLevel))}</span>
-    </div>
-    <div class="ability-metrics">
-      <span><strong>${Number(ability.xp) || 0}</strong> XP</span>
-      <span><strong>${Number(ability.xpToNext) || 0}</strong> 距下一级</span>
-      <span><strong>${Number(ability.relatedCount) || 0}</strong> 关联任务</span>
-      <span><strong>${escapeHtml(ability.unlockedAt || "--")}</strong> 首次记录</span>
-    </div>
-    <div class="ability-skill-list">
-      ${safeTasks(ability.skills).map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}
-    </div>
-    <div class="character-task-list compact-related-tasks">
-      ${relatedTasks.length === 0 ? '<p class="empty">这个能力暂时没有关联任务。</p>' : relatedTasks.map((task) => renderTaskCard(task, true)).join("")}
-    </div>
+      <div class="ability-metrics">
+        <span><strong>${escapeHtml(line.name || line.id)}</strong> 主线</span>
+        <span><strong>${Number(skill.xp) || 0}</strong> XP</span>
+        <span><strong>${Number(skill.relatedCount) || 0}</strong> 关联任务</span>
+        <span><strong>${escapeHtml(skill.lastVerified || "--")}</strong> 上次验证</span>
+        <span><strong>${children.length}</strong> 子技能</span>
+      </div>
+      <div class="skill-detail-grid">
+        <section>
+          <h4>前置依赖</h4>
+          ${dependencies.length ? `<div class="ability-skill-list">${dependencies.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : '<p class="empty">无前置依赖。</p>'}
+        </section>
+        <section>
+          <h4>后续节点</h4>
+          ${
+            children.length || dependents.length
+              ? `<div class="ability-skill-list">${children
+                  .concat(dependents)
+                  .map((item) => `<span>${escapeHtml(item.name || item.id)}</span>`)
+                  .join("")}</div>`
+              : '<p class="empty">暂无后续节点。</p>'
+          }
+        </section>
+      </div>
+      <section>
+        <h4>升级条件</h4>
+        ${
+          conditions.length
+            ? `<ul class="skill-condition-list">${conditions.map((condition) => `<li>${escapeHtml(condition)}</li>`).join("")}</ul>`
+            : '<p class="empty">暂无升级条件。</p>'
+        }
+      </section>
+      <div class="character-task-list compact-related-tasks">
+        ${relatedTasks.length === 0 ? '<p class="empty">这个技能暂时没有关联任务。</p>' : relatedTasks.map((task) => renderTaskCard(task, true)).join("")}
+      </div>
+    </article>
   `;
 }
 
 function drawSkillLinks() {
-  const { character } = characterState;
-  const root = document.getElementById("skill-tree");
+  const line = activeLine();
+  const root = document.querySelector("#skill-tree .skill-tree");
   const svg = document.getElementById("skill-tree-links");
-  if (!character || !root || !svg) return;
-  const abilities = abilityList(character);
+  if (!line || !root || !svg) return;
+  const skills = skillsForLine(line);
+  const edges = edgesForLine(line, skills);
   const rootBox = root.getBoundingClientRect();
   if (!rootBox.width || !rootBox.height) return;
+  const canvasWidth = Math.max(root.scrollWidth, Math.ceil(rootBox.width));
+  const canvasHeight = Math.max(root.scrollHeight, Math.ceil(rootBox.height));
+
   const paths = [];
-  abilities.forEach((ability) => {
-    const from = root.querySelector(`[data-ability-node="${ability.id}"]`);
-    if (!from) return;
+  edges.forEach((edge) => {
+    const from = root.querySelector(`[data-skill-node="${cssEscape(edge.from)}"]`);
+    const to = root.querySelector(`[data-skill-node="${cssEscape(edge.to)}"]`);
+    if (!from || !to) return;
     const fromBox = from.getBoundingClientRect();
-    safeTasks(ability.linksTo).forEach((targetId) => {
-      const to = root.querySelector(`[data-ability-node="${targetId}"]`);
-      if (!to) return;
-      const toBox = to.getBoundingClientRect();
-      const x1 = fromBox.right - rootBox.left;
-      const y1 = fromBox.top + fromBox.height / 2 - rootBox.top;
-      const x2 = toBox.left - rootBox.left;
-      const y2 = toBox.top + toBox.height / 2 - rootBox.top;
-      const mid = x1 + Math.max(24, (x2 - x1) / 2);
-      paths.push(`<path d="M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}" />`);
-    });
+    const toBox = to.getBoundingClientRect();
+    const forward = fromBox.left <= toBox.left;
+    const x1 = (forward ? fromBox.right : fromBox.left) - rootBox.left + root.scrollLeft;
+    const y1 = fromBox.top + fromBox.height / 2 - rootBox.top + root.scrollTop;
+    const x2 = (forward ? toBox.left : toBox.right) - rootBox.left + root.scrollLeft;
+    const y2 = toBox.top + toBox.height / 2 - rootBox.top + root.scrollTop;
+    const distance = Math.max(28, Math.abs(x2 - x1) / 2);
+    const c1 = forward ? x1 + distance : x1 - distance;
+    const c2 = forward ? x2 - distance : x2 + distance;
+    paths.push(`<path class="${edge.type === "dependency" ? "dependency" : "parent"}" d="M ${x1} ${y1} C ${c1} ${y1}, ${c2} ${y2}, ${x2} ${y2}" />`);
   });
-  svg.setAttribute("viewBox", `0 0 ${rootBox.width} ${rootBox.height}`);
+  svg.style.width = `${canvasWidth}px`;
+  svg.style.height = `${canvasHeight}px`;
+  svg.setAttribute("viewBox", `0 0 ${canvasWidth} ${canvasHeight}`);
   svg.innerHTML = paths.join("");
 }
 
 function renderTaskLists(state, history) {
-  const activeTasks = sortCurrentTasks(safeTasks(state.tasks).filter((task) => task.status === "active"));
-  const recentDone = safeTasks(history.tasks)
+  const activeTasks = sortCurrentTasks(safeItems(state.tasks).filter((task) => task.status === "active"));
+  const recentDone = safeItems(history.tasks)
     .filter((task) => task.status === "done")
     .sort((a, b) => taskDate(b).localeCompare(taskDate(a)))
     .slice(0, 5);
@@ -332,31 +498,49 @@ function renderAchievements(achievements) {
           .join("");
 }
 
-function renderCharacter(character, state, history) {
-  characterState = { character, state, history };
+function renderCharacter(character, state, history, skillTree) {
+  characterState.character = character;
+  characterState.state = state;
+  characterState.history = history;
+  characterState.skillTree = skillTree || { lines: safeItems(character.abilityLines), skills: abilityList(character), levelLegend: character.levelLegend || {} };
+  characterState.activeLineId = characterState.activeLineId || skillLines()[0]?.id || "";
+
   renderProfile(character, state);
   renderAbilityTags(character);
-  renderSkillTree(character);
+  renderSkillKpis();
+  renderSkillTabs();
+  renderSkillTree();
   renderTaskLists(state, history);
   renderAchievements(character.achievements || []);
 }
 
 async function initCharacter() {
   setText("character-url", window.location.origin + "/character");
-  const [character, state, historyResult] = await Promise.all([
+  const [character, state, historyResult, skillTree] = await Promise.all([
     api("/api/character"),
     api("/api/state"),
     api("/api/history").catch(() => ({ tasks: [] })),
+    api("/api/skill-tree"),
   ]);
-  const history = safeTasks(historyResult.tasks).length ? historyResult : { tasks: safeTasks(state.history) };
-  renderCharacter(character, state, history);
+  const history = safeItems(historyResult.tasks).length ? historyResult : { tasks: safeItems(state.history) };
+  renderCharacter(character, state, history, skillTree);
+
+  document.getElementById("skill-tree-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-line]");
+    if (!button) return;
+    characterState.activeLineId = button.dataset.line;
+    characterState.selectedSkillId = "";
+    renderSkillTabs();
+    renderSkillTree();
+  });
 
   document.getElementById("skill-tree").addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-ability]");
+    const button = event.target.closest("button[data-skill]");
     if (!button) return;
-    selectedAbilityId = button.dataset.ability;
-    renderSkillTree(characterState.character);
+    characterState.selectedSkillId = button.dataset.skill;
+    renderSkillTree();
   });
+
   window.addEventListener("resize", drawSkillLinks);
 }
 
