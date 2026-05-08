@@ -1,4 +1,11 @@
 const TOKEN_STORAGE_KEY = "llm_todo_token";
+const MAIN_NAV_ITEMS = [
+  { id: "tasks", label: "📋 任务", href: "/#tasks" },
+  { id: "planning", label: "🗺️ 规划", href: "/#planning" },
+  { id: "chat", label: "💬 聊天", href: "/#chat" },
+  { id: "map", label: "🧭 能力地图", href: "/map" },
+  { id: "character", label: "👤 角色", href: "/character" },
+];
 
 function tokenValue() {
   return localStorage.getItem(TOKEN_STORAGE_KEY) || "";
@@ -124,4 +131,39 @@ function renderMarkdown(markdown) {
 function setText(id, value) {
   const node = document.getElementById(id);
   if (node) node.textContent = value;
+}
+
+function currentMainTab() {
+  const path = window.location.pathname;
+  if (path === "/map" || path === "/map/") return "map";
+  if (path === "/character" || path === "/character/" || path === "/character.html") return "character";
+  if (path === "/" || path === "/index.html") {
+    const tab = window.location.hash.replace(/^#/, "");
+    return ["tasks", "planning", "chat"].includes(tab) ? tab : "tasks";
+  }
+  return "";
+}
+
+function updateMainNavigation(activeId = currentMainTab()) {
+  document.querySelectorAll(".topbar nav").forEach((nav) => {
+    nav.setAttribute("aria-label", "主导航");
+    nav.innerHTML = MAIN_NAV_ITEMS.map(
+      (item) => `
+        <a href="${item.href}" data-main-tab="${item.id}" class="${item.id === activeId ? "active" : ""}">
+          ${item.label}
+        </a>
+      `,
+    ).join("");
+  });
+}
+
+function setupMainNavigation() {
+  updateMainNavigation();
+  window.addEventListener("hashchange", () => updateMainNavigation());
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupMainNavigation, { once: true });
+} else {
+  setupMainNavigation();
 }

@@ -13,16 +13,18 @@
         <span id="server-url">http://127.0.0.1:8720/</span>
       </div>
       <nav>
-        <a class="active" href="/">工作台</a>
-        <a href="/character.html">角色</a>
-        <a href="/design/">设计</a>
+        <a class="active" href="/#tasks">📋 任务</a>
+        <a href="/#planning">🗺️ 规划</a>
+        <a href="/#chat">💬 聊天</a>
+        <a href="/map">🧭 能力地图</a>
+        <a href="/character">👤 角色</a>
       </nav>
     </header>
 
     <div id="reminder-banner" class="reminder-banner" hidden></div>
 
-    <main class="workspace">
-      <section class="task-column">
+    <main class="workspace tab-workspace">
+      <section class="task-column index-tab-panel" data-index-tab-panel="tasks">
         <div class="section-head">
           <div>
             <h1>任务</h1>
@@ -64,16 +66,51 @@
         </section>
       </section>
 
-      <section class="planning-column">
+      <section class="planning-column index-tab-panel" data-index-tab-panel="planning" hidden>
+        <div class="planning-tab-head">
+          <div>
+            <h1>规划</h1>
+            <span>长期目标、能力域和 Agent 状态</span>
+          </div>
+          <a href="/map">打开完整能力地图</a>
+        </div>
         <div class="stat-strip" id="stat-strip"></div>
         <section class="horizon-band" id="horizon-band"></section>
+        <section class="planning-block">
+          <div class="map-section-head">
+            <div>
+              <h2>规划仪表盘</h2>
+              <span id="planning-roadmap-updated">--</span>
+            </div>
+            <div id="planning-map-stats" class="stats compact-stats"></div>
+          </div>
+          <div id="planning-roadmap-grid" class="roadmap-grid compact-roadmap"></div>
+        </section>
+        <section class="planning-block">
+          <div class="map-section-head">
+            <div>
+              <h2>能力域</h2>
+              <span>来自 /map 的能力事实源</span>
+            </div>
+          </div>
+          <div id="planning-capability-grid" class="capability-grid compact-capability-grid"></div>
+        </section>
+        <section class="planning-block">
+          <div class="map-section-head">
+            <div>
+              <h2>Agent 状态</h2>
+              <span id="planning-agent-count">--</span>
+            </div>
+          </div>
+          <div id="planning-agent-list" class="planning-agent-list"></div>
+        </section>
         <div class="doc-shell">
           <aside class="doc-list" id="doc-list"></aside>
           <article class="doc-reader markdown" id="doc-reader"></article>
         </div>
       </section>
 
-      <section class="chat-column">
+      <section class="chat-column index-tab-panel" data-index-tab-panel="chat" hidden>
         <div class="chat-head">
           <div>
             <h2>聊天入口</h2>
