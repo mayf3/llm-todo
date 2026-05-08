@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LLM Todo 能力地图</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <strong>LLM Todo 能力地图</strong>
+        <span id="map-url">http://127.0.0.1:8720/map</span>
+      </div>
+      <nav>
+        <a href="/#tasks">📋 任务</a>
+        <a href="/#planning">🗺️ 规划</a>
+        <a href="/#chat">💬 聊天</a>
+        <a href="/map" class="active">🧭 能力地图</a>
+        <a href="/character">👤 角色</a>
+      </nav>
+    </header>
+
+    <main class="map-layout">
+      <section class="doc-section map-hero">
+        <div>
+          <h1>龙虾能力地图</h1>
+          <p>能力域、Agent 状态和多时间尺度规划的全景仪表盘。</p>
+        </div>
+        <div id="map-stats" class="stats"></div>
+      </section>
+
+      <section class="doc-section">
+        <div class="map-section-head">
+          <div>
+            <h2>能力域</h2>
+            <span>点击卡片查看子能力、Gap 和关联 Agent</span>
+          </div>
+        </div>
+        <div id="capability-grid" class="capability-grid"></div>
+      </section>
+
+      <section class="doc-section map-detail" id="capability-detail"></section>
+
+      <section class="doc-section">
+        <div class="map-section-head">
+          <div>
+            <h2>规划仪表盘</h2>
+            <span id="roadmap-updated">--</span>
+          </div>
+        </div>
+        <div id="roadmap-grid" class="roadmap-grid"></div>
+      </section>
+
+      <section class="map-bottom-grid">
+        <section class="doc-section">
+          <div class="map-section-head">
+            <div>
+              <h2>待讨论问题</h2>
+              <span>决策后应回写 roadmap 或能力域</span>
+            </div>
+          </div>
+          <div id="open-questions" class="question-list"></div>
+        </section>
+
+        <section class="doc-section">
+          <div class="map-section-head">
+            <div>
+              <h2>Agent 状态</h2>
+              <span id="agent-count">--</span>
+            </div>
+          </div>
+          <div id="agent-status-list" class="agent-status-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/shared.js"></script>
+    <script src="/map.js"></script>
+  </body>
+</html>

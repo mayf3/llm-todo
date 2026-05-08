@@ -27,6 +27,9 @@ DOCS = ROOT / "docs"
 REVIEW_DIR = TODO / "review"
 TASKS_PATH = DATA / "tasks.json"
 HISTORY_PATH = DATA / "history.json"
+CAPABILITIES_PATH = DATA / "capabilities.json"
+AGENTS_PATH = DATA / "agents.json"
+ROADMAP_PATH = DATA / "roadmap.json"
 BACKUP_DIR = DATA / "backups"
 
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
@@ -48,7 +51,7 @@ REPEAT_OPTIONS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
 CURRENT_STATUSES = {"active", "waiting"}
 ARCHIVE_STATUSES = {"done", "dropped"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
-DATA_FILES = {TASKS_PATH, HISTORY_PATH}
+DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
 
@@ -63,6 +66,19 @@ def read_text(path: Path) -> str:
 def write_text(path: Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
+
+
+def read_json_object(path: Path, fallback: dict) -> dict:
+    if not path.exists():
+        return dict(fallback)
+    payload = json.loads(read_text(path))
+    return payload if isinstance(payload, dict) else dict(fallback)
+
+
+def write_json_object(path: Path, payload: dict, label: str) -> None:
+    with data_change(label):
+        ensure_data_backup(path)
+        write_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
 
 def clean_label(value: str) -> str:
@@ -85,7 +101,7 @@ def create_backup_snapshot(label: str = "change") -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     target = BACKUP_DIR / f"{stamp}-{clean_label(label)}"
     target.mkdir(parents=True, exist_ok=False)
-    for source in (TASKS_PATH, HISTORY_PATH):
+    for source in sorted(DATA_FILES, key=lambda item: item.name):
         if source.exists():
             shutil.copy2(source, target / source.name)
         else:
@@ -428,6 +444,123 @@ def providers() -> list[dict]:
     ]
 
 
+def capabilities_payload() -> dict:
+    payload = read_json_object(CAPABILITIES_PATH, {"domains": []})
+    payload["domains"] = [domain for domain in payload.get("domains", []) if isinstance(domain, dict)]
+    return payload
+
+
+def agents_payload() -> dict:
+    payload = read_json_object(AGENTS_PATH, {"agents": []})
+    payload["agents"] = [agent for agent in payload.get("agents", []) if isinstance(agent, dict)]
+    return payload
+
+
+def roadmap_payload() -> dict:
+    payload = read_json_object(ROADMAP_PATH, {"milestones": [], "openQuestions": [], "updated": ""})
+    payload["milestones"] = [milestone for milestone in payload.get("milestones", []) if isinstance(milestone, dict)]
+    open_questions = payload.get("openQuestions", [])
+    payload["openQuestions"] = open_questions if isinstance(open_questions, list) else []
+    payload["updated"] = str(payload.get("updated", ""))
+    return payload
+
+
+def find_by_id(items: list[dict], item_id: str) -> dict | None:
+    for item in items:
+        if item.get("id") == item_id:
+            return item
+    return None
+
+
+def update_capability(domain_id: str, payload: dict) -> dict | None:
+    data = capabilities_payload()
+    incoming = payload.get("domain") if isinstance(payload.get("domain"), dict) else payload
+    if not isinstance(incoming, dict):
+        incoming = {}
+    for index, domain in enumerate(data["domains"]):
+        if domain.get("id") != domain_id:
+            continue
+        updated = _deep_merge(domain, incoming)
+        updated["id"] = domain_id
+        updated["updated"] = str(datetime.now().date())
+        data["domains"][index] = updated
+        write_json_object(CAPABILITIES_PATH, data, "update-capability")
+        return updated
+    return None
+
+
+def update_agent_status(agent_id: str, payload: dict) -> dict | None:
+    data = agents_payload()
+    incoming = payload.get("agent") if isinstance(payload.get("agent"), dict) else payload
+    if not isinstance(incoming, dict):
+        incoming = {}
+    for index, agent in enumerate(data["agents"]):
+        if agent.get("id") != agent_id:
+            continue
+        updated = _deep_merge(agent, incoming)
+        updated["id"] = agent_id
+        data["agents"][index] = updated
+        write_json_object(AGENTS_PATH, data, "update-agent-status")
+        return updated
+    return None
+
+
+def _merge_by_id(current_list: list, incoming_list: list, id_key: str = "id") -> list:
+    """Merge incoming list items into current by id_key. Items present in current
+    but absent from incoming are preserved (never deleted)."""
+    lookup = {item[id_key]: item for item in incoming_list if isinstance(item, dict) and id_key in item}
+    result = []
+    for existing in current_list:
+        if not isinstance(existing, dict) or id_key not in existing:
+            result.append(existing)
+            continue
+        eid = existing[id_key]
+        if eid in lookup:
+            merged = _deep_merge(existing, lookup.pop(eid))
+            merged[id_key] = eid
+            result.append(merged)
+        else:
+            result.append(existing)
+    # append genuinely new items
+    for item in lookup.values():
+        result.append(item)
+    return result
+
+
+def _deep_merge(current: dict, incoming: dict) -> dict:
+    """Recursively merge incoming into current. Lists with id-bearing dicts use
+    _merge_by_id; plain scalars/other lists are overwritten."""
+    result = dict(current)
+    for key, value in incoming.items():
+        if key == "updated":
+            continue
+        existing = result.get(key)
+        if isinstance(existing, dict) and isinstance(value, dict):
+            result[key] = _deep_merge(existing, value)
+        elif (
+            isinstance(existing, list)
+            and isinstance(value, list)
+            and existing
+            and isinstance(existing[0], dict)
+            and "id" in existing[0]
+        ):
+            result[key] = _merge_by_id(existing, value)
+        else:
+            result[key] = value
+    return result
+
+
+def update_roadmap(payload: dict) -> dict:
+    incoming = payload.get("roadmap") if isinstance(payload.get("roadmap"), dict) else payload
+    if not isinstance(incoming, dict):
+        incoming = {}
+    current = roadmap_payload()
+    updated = _deep_merge(current, incoming)
+    updated["updated"] = str(datetime.now().date())
+    write_json_object(ROADMAP_PATH, updated, "update-roadmap")
+    return updated
+
+
 def stats() -> dict:
     tasks = load_tasks()
     history = load_history()
@@ -475,11 +608,8 @@ def state_payload() -> dict:
     history = sorted_history(load_history())
     docs = doc_records()
     plans = {}
-    for key, path in {
-        "lifetime": TODO / "horizons" / "lifetime.md",
-        "year": TODO / "horizons" / "year.md",
-        "quarter": TODO / "horizons" / "quarter.md",
-    }.items():
+    for key in HORIZON_ORDER:
+        path = TODO / "horizons" / f"{key}.md"
         if path.exists():
             _, body = split_frontmatter(read_text(path))
             plans[key] = first_summary(body)
@@ -1127,13 +1257,194 @@ def max_completion_streak(done_tasks: list[dict]) -> int:
     return best
 
 
+PRACTICAL_ABILITIES = [
+    {
+        "id": "task-management",
+        "icon": "✅",
+        "title": "任务管理",
+        "description": "任务追踪、优先级排序、进度监控和复盘沉淀。",
+        "skills": ["任务追踪", "优先级排序", "进度监控"],
+        "keywords": ["任务", "todo", "llm todo", "规划", "优先级", "提醒", "复盘", "迁移"],
+        "tier": "foundation",
+        "linksTo": ["scheduling", "coding", "shopping"],
+    },
+    {
+        "id": "research",
+        "icon": "🔍",
+        "title": "深度研究",
+        "description": "多源研究、报告生成、信息整合和知识库沉淀。",
+        "skills": ["多源研究", "报告生成", "信息整合"],
+        "keywords": ["研究", "调研", "学习", "阅读", "知识", "wiki", "deep research", "quantding"],
+        "areas": ["learning"],
+        "tier": "foundation",
+        "linksTo": ["coding", "finance", "writing"],
+    },
+    {
+        "id": "writing",
+        "icon": "✍️",
+        "title": "写作能力",
+        "description": "技术博客、文学创作、文风学习和内容资产沉淀。",
+        "skills": ["技术博客", "文学创作", "文风学习"],
+        "keywords": ["写作", "博客", "文章", "创作", "文风", "内容", "随想"],
+        "tier": "foundation",
+        "linksTo": ["publishing", "voice", "translation"],
+    },
+    {
+        "id": "coding",
+        "icon": "💻",
+        "title": "编程能力",
+        "description": "代码生成、项目开发、Bug 修复、部署和 API 集成。",
+        "skills": ["代码生成", "项目开发", "Bug 修复"],
+        "keywords": ["代码", "开发", "bug", "api", "前端", "后端", "部署", "provider", "仓库", "模块", "skill"],
+        "tier": "execution",
+        "linksTo": ["publishing"],
+    },
+    {
+        "id": "scheduling",
+        "icon": "📅",
+        "title": "日程管理",
+        "description": "日历管理、提醒推送、时间规划和周期节奏维护。",
+        "skills": ["日历管理", "提醒推送", "时间规划"],
+        "keywords": ["日程", "日历", "提醒", "定时", "deadline", "截止", "本周", "年度复盘", "时间规划"],
+        "tier": "execution",
+        "linksTo": [],
+    },
+    {
+        "id": "shopping",
+        "icon": "🛒",
+        "title": "购物助手",
+        "description": "淘宝/京东比价、购物清单管理、自动下单和购买复盘。",
+        "skills": ["比价", "购物清单", "自动下单"],
+        "keywords": ["购物", "淘宝", "京东", "比价", "清单", "下单", "购买"],
+        "tier": "execution",
+        "linksTo": [],
+    },
+    {
+        "id": "translation",
+        "icon": "🌐",
+        "title": "翻译能力",
+        "description": "多语言翻译、文档本地化和跨语言内容改写。",
+        "skills": ["多语言翻译", "文档本地化", "术语统一"],
+        "keywords": ["翻译", "本地化", "多语言", "英文", "中文", "术语"],
+        "tier": "execution",
+        "linksTo": ["publishing"],
+    },
+    {
+        "id": "publishing",
+        "icon": "📤",
+        "title": "发布能力",
+        "description": "多平台发布、App Store 提交、博客和社交分发。",
+        "skills": ["多平台发布", "发布清单", "素材校验"],
+        "keywords": ["发布", "app store", "提交", "分发", "上线", "飞书", "社交", "博客发布"],
+        "tier": "output",
+        "linksTo": [],
+    },
+    {
+        "id": "voice",
+        "icon": "🔊",
+        "title": "语音能力",
+        "description": "TTS 语音合成、语音消息发送、播客脚本和音频产线。",
+        "skills": ["TTS 合成", "语音消息", "播客制作"],
+        "keywords": ["语音", "tts", "播客", "音频", "配音", "声音"],
+        "tier": "output",
+        "linksTo": [],
+    },
+    {
+        "id": "finance",
+        "icon": "📈",
+        "title": "投资理财",
+        "description": "股票分析、量化策略、财务追踪和投资复盘。",
+        "skills": ["股票分析", "量化策略", "财务追踪"],
+        "keywords": ["股票", "投资", "理财", "量化", "quant", "财务", "portfolio"],
+        "tier": "output",
+        "linksTo": [],
+    },
+]
+
+ABILITY_LEVEL_THRESHOLDS = [0, 10, 30, 60, 100]
+
+
+def ability_level(xp: int) -> tuple[int, int]:
+    level = 1
+    for threshold in ABILITY_LEVEL_THRESHOLDS[1:]:
+        if xp >= threshold:
+            level += 1
+    level = min(level, 5)
+    if level >= 5:
+        return level, 0
+    return level, max(0, ABILITY_LEVEL_THRESHOLDS[level] - xp)
+
+
+def task_search_text(task: dict) -> str:
+    return " ".join(
+        [
+            str(task.get("title", "")),
+            str(task.get("nextAction", "")),
+            str(task.get("notes", "")),
+            " ".join(str(tag) for tag in task.get("tags", []) if tag),
+        ]
+    ).lower()
+
+
+def task_matches_ability(task: dict, ability: dict) -> bool:
+    text = task_search_text(task)
+    keywords = [str(keyword).lower() for keyword in ability.get("keywords", [])]
+    if any(keyword and keyword in text for keyword in keywords):
+        return True
+    areas = set(ability.get("areas", []))
+    return bool(areas and task.get("area") in areas)
+
+
+def earliest_task_date(tasks: list[dict]) -> str:
+    dates = [value for task in tasks for value in (task.get("created"), task.get("updated"), task.get("due")) if value]
+    return min(dates) if dates else ""
+
+
+def practical_abilities(tasks: list[dict], history: list[dict]) -> list[dict]:
+    all_tasks = tasks + history
+    done_ids = {task.get("id") for task in history if task.get("status") == "done"}
+    current_ids = {task.get("id") for task in tasks}
+    abilities = []
+    for definition in PRACTICAL_ABILITIES:
+        related = [task for task in all_tasks if task_matches_ability(task, definition)]
+        related_ids = [str(task.get("id")) for task in related if task.get("id")]
+        done_count = len([task for task in related if task.get("id") in done_ids])
+        current_count = len([task for task in related if task.get("id") in current_ids])
+        xp = done_count * 10 + current_count * 4
+        level, xp_to_next = ability_level(xp)
+        abilities.append(
+            {
+                "id": definition["id"],
+                "name": f"{definition['icon']} {definition['title']}",
+                "icon": definition["icon"],
+                "title": definition["title"],
+                "description": definition["description"],
+                "level": level,
+                "maxLevel": 5,
+                "xp": xp,
+                "xpToNext": xp_to_next,
+                "relatedTasks": related_ids,
+                "relatedCount": len(related_ids),
+                "doneCount": done_count,
+                "activeCount": current_count,
+                "unlockedAt": earliest_task_date(related),
+                "skills": definition["skills"],
+                "tier": definition["tier"],
+                "linksTo": definition["linksTo"],
+            }
+        )
+    return abilities
+
+
 def character_payload() -> dict:
     tasks = load_tasks()
     history = load_history()
     done = [task for task in history if task.get("status") == "done"]
     done_count = len(done)
-    level = done_count // 10 + 1
-    xp = done_count % 10
+    abilities = practical_abilities(tasks, history)
+    total_ability_xp = sum(ability["xp"] for ability in abilities)
+    level = total_ability_xp // 50 + 1
+    xp = total_ability_xp % 50
 
     area_counts = {
         "system": len([task for task in done if task.get("area") == "system"]),
@@ -1141,7 +1452,6 @@ def character_payload() -> dict:
         "work": len([task for task in done if task.get("area") == "work"]),
         "life": len([task for task in done if task.get("area") == "life"]),
     }
-    scale = max(10, *area_counts.values())
 
     high_done_with_due = [task for task in done if task.get("priority") == "high" and parse_iso_date(task.get("due"))]
     high_done_on_time = [
@@ -1206,18 +1516,14 @@ def character_payload() -> dict:
         },
     ]
 
+    core_capabilities = sorted(abilities, key=lambda item: (item["level"], item["xp"], item["relatedCount"]), reverse=True)[:5]
+
     return {
-        "name": "冒险者",
+        "name": "效率管家",
         "level": level,
-        "experience": {"current": xp, "next": 10, "totalCompleted": done_count, "percent": xp * 10},
-        "abilities": [
-            {"id": "engineering", "name": "🏗️ 工程力", "value": round(area_counts["system"] / scale * 100), "raw": area_counts["system"], "unit": "项", "description": "system 领域完成任务数"},
-            {"id": "learning", "name": "📚 学习力", "value": round(area_counts["learning"] / scale * 100), "raw": area_counts["learning"], "unit": "项", "description": "learning 领域完成任务数"},
-            {"id": "execution", "name": "💼 执行力", "value": round(area_counts["work"] / scale * 100), "raw": area_counts["work"], "unit": "项", "description": "work 领域完成任务数"},
-            {"id": "life", "name": "🌱 生活力", "value": round(area_counts["life"] / scale * 100), "raw": area_counts["life"], "unit": "项", "description": "life 领域完成任务数"},
-            {"id": "efficiency", "name": "⚡ 效率值", "value": efficiency, "raw": efficiency, "unit": "%", "description": f"{len(high_done_on_time)}/{len(high_done_with_due)} 个高优先级任务按时完成"},
-            {"id": "focus", "name": "🎯 专注度", "value": focus, "raw": focus, "unit": "%", "description": f"本周完成 {len(week_done)} / 本周总任务 {len(week_total_ids)}"},
-        ],
+        "experience": {"current": xp, "next": 50, "totalCompleted": done_count, "percent": xp * 2, "totalAbilityXp": total_ability_xp},
+        "abilities": abilities,
+        "coreCapabilities": core_capabilities,
         "achievements": achievements,
         "week": {"start": week_start.isoformat(), "end": week_end.isoformat(), "done": len(week_done), "total": len(week_total_ids)},
     }
@@ -1251,6 +1557,9 @@ def directory_tree() -> str:
   data/
     tasks.json
     history.json
+    capabilities.json
+    agents.json
+    roadmap.json
   todo/
     index.md
     log.md
@@ -1269,11 +1578,13 @@ def directory_tree() -> str:
     index.html
     character.html
     design.html
+    map.html
     styles.css
     shared.js
     app.js
     character.js
-    design.js"""
+    design.js
+    map.js"""
 
 
 def design_payload() -> dict:
@@ -1282,13 +1593,18 @@ def design_payload() -> dict:
         ("web/index.html", "任务规划工作台结构，首屏含任务、规划尺度和聊天窗口"),
         ("web/character.html", "角色概览页面结构，展示等级、能力值和成就墙"),
         ("web/design.html", "设计文档网站结构"),
+        ("web/map.html", "能力地图页面结构，展示能力域、路线图和 Agent 状态"),
         ("web/styles.css", "中文任务工作台视觉系统和响应式布局"),
         ("web/shared.js", "API 客户端和 Markdown 渲染器"),
         ("web/app.js", "任务列表、文档阅读、聊天、模型提供方选择和快速创建交互"),
         ("web/character.js", "角色页面数据加载、能力雷达图和成就渲染"),
         ("web/design.js", "设计图、风险图、职责表和评审历史"),
+        ("web/map.js", "能力地图数据加载、卡片展开、路线图进度和 Agent 状态渲染"),
         ("data/tasks.json", "当前任务事实源，只保存 active/waiting"),
         ("data/history.json", "已完成和已放弃任务归档"),
+        ("data/capabilities.json", "能力域事实源，记录成熟度、子能力、Gap 和关联 Agent"),
+        ("data/agents.json", "Agent 状态事实源，记录活跃状态、定时状态和关联能力域"),
+        ("data/roadmap.json", "结构化路线图事实源，记录多时间尺度目标和开放问题"),
         ("schema/AGENTS.md", "LLM 维护规则"),
         ("schema/task.schema.json", "任务字段约束"),
         ("docs/design.md", "系统设计文档"),
@@ -1364,10 +1680,12 @@ def save_review(payload: dict) -> dict:
 def safe_web_path(path: str) -> Path:
     if path == "/":
         return WEB / "index.html"
-    if path == "/character/":
+    if path in {"/character", "/character/"}:
         return WEB / "character.html"
     if path == "/design/":
         return WEB / "design.html"
+    if path in {"/map", "/map/"}:
+        return WEB / "map.html"
     target = (WEB / path.lstrip("/")).resolve()
     if WEB not in target.parents and target != WEB:
         raise ValueError("path escapes web root")
@@ -1414,11 +1732,17 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
         return False
 
+    def read_json_body(self) -> dict:
+        size = int(self.headers.get("Content-Length", "0") or "0")
+        payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
+        return payload if isinstance(payload, dict) else {}
+
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         if not self.authorized(parsed.path):
             return
         query = urllib.parse.parse_qs(parsed.query)
+        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", parsed.path)
         try:
             if parsed.path == "/api/health":
                 self.send_json({"ok": True, "root": str(ROOT), "stats": stats()})
@@ -1446,6 +1770,16 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(review_payload())
             elif parsed.path == "/api/reviews":
                 self.send_json(review_history())
+            elif parsed.path == "/api/capabilities":
+                self.send_json(capabilities_payload())
+            elif capability_match:
+                domain_id = urllib.parse.unquote(capability_match.group(1))
+                domain = find_by_id(capabilities_payload()["domains"], domain_id)
+                self.send_json({"domain": domain} if domain else {"error": "capability not found"}, 200 if domain else 404)
+            elif parsed.path == "/api/agents-status":
+                self.send_json(agents_payload())
+            elif parsed.path == "/api/roadmap":
+                self.send_json(roadmap_payload())
             else:
                 self.send_file(safe_web_path(parsed.path))
         except Exception as exc:
@@ -1472,6 +1806,29 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(undo_last_change())
             elif parsed.path == "/api/review/save":
                 self.send_json(save_review(payload))
+            else:
+                self.send_error(404)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, 500)
+
+    def do_PUT(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        if not self.authorized(parsed.path):
+            return
+        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", parsed.path)
+        agent_match = re.fullmatch(r"/api/agents-status/([^/]+)", parsed.path)
+        try:
+            payload = self.read_json_body()
+            if capability_match:
+                domain_id = urllib.parse.unquote(capability_match.group(1))
+                domain = update_capability(domain_id, payload)
+                self.send_json({"domain": domain, "domains": capabilities_payload()["domains"]} if domain else {"error": "capability not found"}, 200 if domain else 404)
+            elif agent_match:
+                agent_id = urllib.parse.unquote(agent_match.group(1))
+                agent = update_agent_status(agent_id, payload)
+                self.send_json({"agent": agent, "agents": agents_payload()["agents"]} if agent else {"error": "agent not found"}, 200 if agent else 404)
+            elif parsed.path == "/api/roadmap":
+                self.send_json(update_roadmap(payload))
             else:
                 self.send_error(404)
         except Exception as exc:

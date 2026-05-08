@@ -10,66 +10,102 @@
     <header class="topbar">
       <div class="brand">
         <strong>LLM Todo 角色</strong>
-        <span id="character-url">http://127.0.0.1:8720/character.html</span>
+        <span id="character-url">http://127.0.0.1:8720/character</span>
       </div>
       <nav>
-        <a href="/">工作台</a>
-        <a class="active" href="/character.html">角色</a>
-        <a href="/design/">设计</a>
+        <a href="/#tasks">📋 任务</a>
+        <a href="/#planning">🗺️ 规划</a>
+        <a href="/#chat">💬 聊天</a>
+        <a href="/map">🧭 能力地图</a>
+        <a class="active" href="/character">👤 角色</a>
       </nav>
     </header>
 
     <main class="character-layout">
-      <section class="doc-section character-hero">
-        <div class="character-title">
-          <span>当前角色</span>
-          <h1 id="character-name">加载中</h1>
-          <p id="character-level">等级 --</p>
+      <section class="doc-section character-profile">
+        <div class="character-avatar-card" aria-label="角色头像">
+          <div class="avatar-frame">
+            <svg class="avatar-figure" viewBox="0 0 160 160" role="img" aria-label="效率管家头像">
+              <path class="avatar-shadow" d="M40 132h80v12H40z" />
+              <path class="avatar-hood" d="M38 72c0-31 18-52 42-52s42 21 42 52v52H38z" />
+              <path class="avatar-hair" d="M54 56c8-20 42-24 56 2-12-4-20 0-28 6-9-7-17-10-28-8z" />
+              <path class="avatar-face" d="M52 64c0-19 56-19 56 0v18c0 18-12 32-28 32S52 100 52 82z" />
+              <path class="avatar-tunic" d="M40 124c8-20 23-30 40-30s32 10 40 30v12H40z" />
+              <path class="avatar-scarf" d="M66 102h28l-7 28H73z" />
+              <rect class="avatar-eye" x="65" y="77" width="7" height="7" rx="2" />
+              <rect class="avatar-eye" x="88" y="77" width="7" height="7" rx="2" />
+              <path class="avatar-smile" d="M70 93c6 5 14 5 20 0" />
+              <path class="avatar-spark" d="M123 31l4 8 8 4-8 4-4 8-4-8-8-4 8-4z" />
+            </svg>
+          </div>
         </div>
-        <div class="xp-panel">
-          <div class="progress-meta">
-            <span>经验</span>
-            <strong id="xp-label">-- / -- XP</strong>
+
+        <div class="character-summary">
+          <span class="character-kicker">当前角色</span>
+          <h1 id="character-name">效率管家</h1>
+          <div class="character-meta">
+            <span id="character-level">Lv. --</span>
+            <span id="character-total">累计完成 -- 个任务</span>
           </div>
-          <div class="meter" aria-label="经验进度">
-            <span id="xp-bar"></span>
+          <div class="xp-panel">
+            <div class="progress-meta">
+              <span>经验值</span>
+              <strong id="xp-label">-- / -- XP</strong>
+            </div>
+            <div class="meter" aria-label="经验进度">
+              <span id="xp-bar"></span>
+            </div>
+            <p id="xp-note">读取经验数据中。</p>
           </div>
-          <p id="xp-note">读取经验数据中。</p>
+          <div class="character-mini-stats">
+            <span><strong id="active-count">--</strong> 进行中</span>
+            <span><strong id="week-done">--</strong>/<strong id="week-total">--</strong> 本周</span>
+            <span id="week-range">--</span>
+          </div>
         </div>
       </section>
 
       <section class="doc-section">
         <div class="character-section-head">
-          <h2>六项能力</h2>
-          <span>能力值按当前任务历史计算</span>
+          <h2>核心能力标签</h2>
+          <span>按当前任务和完成记录自动排序</span>
         </div>
-        <div id="abilities-grid" class="ability-grid"></div>
+        <div id="ability-tags" class="ability-tags"></div>
       </section>
 
-      <section class="character-bottom-grid">
+      <section class="doc-section">
+        <div class="character-section-head">
+          <h2>实用能力树</h2>
+          <span>点击能力查看关联任务</span>
+        </div>
+        <div id="skill-tree" class="skill-tree"></div>
+        <div id="ability-detail" class="ability-detail"></div>
+      </section>
+
+      <section class="character-task-grid">
         <section class="doc-section">
           <div class="character-section-head">
-            <h2>成就墙</h2>
-            <span id="achievement-count">-- / -- 已解锁</span>
+            <h2>当前进行中</h2>
+            <span id="active-task-count">-- 个任务</span>
           </div>
-          <div id="achievements-grid" class="achievement-grid"></div>
+          <div id="active-task-list" class="character-task-list"></div>
         </section>
 
-        <section class="doc-section week-panel">
+        <section class="doc-section">
           <div class="character-section-head">
-            <h2>本周概览</h2>
-            <span id="week-range">--</span>
+            <h2>近期完成</h2>
+            <span id="recent-task-count">-- 个任务</span>
           </div>
-          <div class="week-total">
-            <strong id="week-done">--</strong>
-            <span>/</span>
-            <strong id="week-total">--</strong>
-          </div>
-          <div class="meter" aria-label="本周完成进度">
-            <span id="week-bar"></span>
-          </div>
-          <p id="week-note">本周完成数 / 总数</p>
+          <div id="recent-done-list" class="character-task-list"></div>
         </section>
+      </section>
+
+      <section class="doc-section">
+        <div class="character-section-head">
+          <h2>成就徽章</h2>
+          <span id="achievement-count">-- / -- 已解锁</span>
+        </div>
+        <div id="achievement-badges" class="achievement-badges"></div>
       </section>
     </main>
 
