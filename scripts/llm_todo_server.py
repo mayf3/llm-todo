@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import copy
 import hashlib
 import calendar
 import json
@@ -30,6 +31,7 @@ HISTORY_PATH = DATA / "history.json"
 CAPABILITIES_PATH = DATA / "capabilities.json"
 AGENTS_PATH = DATA / "agents.json"
 ROADMAP_PATH = DATA / "roadmap.json"
+SKILL_TREE_PATH = DATA / "skill_tree.json"
 BACKUP_DIR = DATA / "backups"
 
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
@@ -51,7 +53,7 @@ REPEAT_OPTIONS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
 CURRENT_STATUSES = {"active", "waiting"}
 ARCHIVE_STATUSES = {"done", "dropped"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
-DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH}
+DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
 
@@ -1257,109 +1259,188 @@ def max_completion_streak(done_tasks: list[dict]) -> int:
     return best
 
 
-PRACTICAL_ABILITIES = [
-    {
-        "id": "task-management",
-        "icon": "✅",
-        "title": "任务管理",
-        "description": "任务追踪、优先级排序、进度监控和复盘沉淀。",
-        "skills": ["任务追踪", "优先级排序", "进度监控"],
-        "keywords": ["任务", "todo", "llm todo", "规划", "优先级", "提醒", "复盘", "迁移"],
-        "tier": "foundation",
-        "linksTo": ["scheduling", "coding", "shopping"],
+SKILL_TREE_ORDER = ["content", "invest", "system", "life", "growth"]
+SKILL_TREE_LAST_VERIFIED = "2026-05-08"
+SKILL_LEVELS = {
+    0: {"label": "未解锁", "marker": "🔒", "color": "gray", "className": "locked", "status": "locked"},
+    1: {"label": "入门", "marker": "🌱", "color": "lightblue", "className": "beginner", "status": "beginner"},
+    2: {"label": "可用", "marker": "🔄", "color": "blue", "className": "usable", "status": "usable"},
+    3: {"label": "熟练", "marker": "✅", "color": "green", "className": "proficient", "status": "proficient"},
+    4: {"label": "精通", "marker": "⭐", "color": "gold", "className": "expert", "status": "expert"},
+    5: {"label": "大师", "marker": "🏆", "color": "purple", "className": "master", "status": "master"},
+}
+
+
+def upgrade_conditions(level: int, name: str) -> list[str]:
+    if level <= 0:
+        return [f"完成{name}的首个可复现流程", "记录输入、输出、检查点和异常处理方式"]
+    if level == 1:
+        return [f"累计稳定使用{name} >= 5 次", "形成固定模板或检查清单"]
+    if level == 2:
+        return [f"{name}连续稳定产出 >= 4 周", "主要异常有明确处理路径"]
+    if level == 3:
+        return [f"{name}形成自动化闭环，人工只做抽查", "关键数据可追踪并能复盘"]
+    if level == 4:
+        return [f"{name}获得外部用户、收入或团队复用验证", "沉淀为可公开复用的标准流程"]
+    return ["保持外部验证数据持续增长", "定期复盘并更新标准流程"]
+
+
+def skill_node(
+    skill_id: str,
+    name: str,
+    icon: str,
+    level: int,
+    tree_id: str,
+    parent_id: str | None = None,
+    dependencies: list[str] | None = None,
+    notes: str = "",
+    keywords: list[str] | None = None,
+    areas: list[str] | None = None,
+    conditions: list[str] | None = None,
+) -> dict:
+    deps = list(dependencies or [])
+    if parent_id and parent_id not in deps:
+        deps.insert(0, parent_id)
+    level = max(0, min(5, int(level)))
+    meta = SKILL_LEVELS[level]
+    title = name.strip()
+    display_name = f"{icon} {title}".strip() if icon and not title.startswith(icon) else title
+    return {
+        "id": skill_id,
+        "name": display_name,
+        "title": title,
+        "icon": icon,
+        "level": level,
+        "maxLevel": 5,
+        "parentId": parent_id,
+        "treeId": tree_id,
+        "dependencies": deps,
+        "upgradeConditions": list(conditions or upgrade_conditions(level, name)),
+        "status": meta["status"],
+        "lastVerified": SKILL_TREE_LAST_VERIFIED,
+        "notes": notes,
+        "description": notes or f"{name}能力节点。",
+        "line": tree_id,
+        "keywords": list(keywords or [name]),
+        "areas": list(areas or []),
+    }
+
+
+SKILL_TREES = {
+    "content": {
+        "id": "content",
+        "name": "内容创作线",
+        "icon": "📝",
+        "skills": [
+            skill_node("writing", "文本写作", "📝", 2, "content", notes="文本写作主能力，承载技术博客、文风学习和随想记录。", keywords=["写作", "文本", "文章", "博客", "创作", "文案", "随想", "文风", "内容"]),
+            skill_node("tech-blog", "技术博客", "📝", 3, "content", "writing", notes="有持续产出，但频率不稳定", keywords=["技术博客", "博客", "技术文章", "文章", "blog"]),
+            skill_node("literary-writing", "文学创作", "✍️", 0, "content", "writing", notes="待建立稳定文学创作流程", keywords=["文学", "小说", "散文", "诗歌", "文学创作"]),
+            skill_node("style-learning", "文风学习", "🖋️", 1, "content", "writing", notes="有 agent，产出不持续", keywords=["文风", "风格", "文风学习", "仿写"]),
+            skill_node("random-notes", "随想记录", "📓", 1, "content", "writing", notes="有流程，但不稳定", keywords=["随想", "记录", "灵感", "笔记", "想法"]),
+            skill_node("multi-platform-publishing", "多平台发布", "📤", 1, "content", "writing", dependencies=["writing"], notes="发布链路已起步，稳定性仍需提升", keywords=["多平台", "发布", "分发", "上线", "内容发布"]),
+            skill_node("blog-publishing", "博客发布", "🌐", 2, "content", "multi-platform-publishing", notes="基本能用，偶尔出问题", keywords=["博客发布", "博客", "发布"]),
+            skill_node("wechat-official-account", "微信公众号", "💬", 1, "content", "multi-platform-publishing", notes="有工具，不稳定", keywords=["微信公众号", "公众号", "微信发布"]),
+            skill_node("zhihu-juejin-csdn", "知乎/掘金/CSDN", "🧩", 1, "content", "multi-platform-publishing", notes="有工具，不稳定", keywords=["知乎", "掘金", "CSDN", "csdn"]),
+            skill_node("xiaohongshu", "小红书", "📕", 0, "content", "multi-platform-publishing", notes="未解锁小红书稳定发布流程", keywords=["小红书", "rednote"]),
+            skill_node("overseas-platforms", "海外平台", "🌍", 0, "content", "multi-platform-publishing", notes="未解锁海外平台发布流程", keywords=["海外平台", "medium", "substack", "海外发布"]),
+            skill_node("voice", "语音能力", "🔊", 1, "content", "writing", dependencies=["writing"], notes="语音能力已起步，播客链路未闭环", keywords=["语音", "tts", "播客", "音频", "配音", "声音"]),
+            skill_node("tts-single-voice", "TTS 单音色", "🔉", 2, "content", "voice", notes="能用，偶尔有问题", keywords=["TTS 单音色", "tts", "语音合成", "单音色"]),
+            skill_node("tts-multi-voice", "TTS 多音色", "🎙️", 0, "content", "voice", notes="未解锁多音色稳定流程", keywords=["TTS 多音色", "多音色", "配音"]),
+            skill_node("podcast-topic-script", "播客选题脚本", "🎧", 1, "content", "voice", notes="有 agent，产出不持续", keywords=["播客选题", "播客脚本", "播客", "选题脚本"]),
+            skill_node("audio-post-production", "音频后期剪辑", "🎚️", 0, "content", "voice", notes="未解锁音频后期剪辑流程", keywords=["音频后期", "剪辑", "降噪", "混音"]),
+            skill_node("podcast-platform-publishing", "播客平台发布", "📡", 0, "content", "voice", dependencies=["audio-post-production", "podcast-topic-script"], notes="未解锁播客平台发布流程", keywords=["播客发布", "播客平台", "小宇宙", "podcast"]),
+            skill_node("image", "图像能力", "🎨", 1, "content", "writing", dependencies=["writing"], notes="图像生成和配图能力已起步", keywords=["图像", "图片", "配图", "封面", "AI 生成图"]),
+            skill_node("ai-image-generation", "AI 生成图", "🖼️", 2, "content", "image", notes="能产出，不稳定", keywords=["AI 生成图", "生成图", "图片生成", "imagegen"]),
+            skill_node("cover-image", "封面图/配图", "🌄", 1, "content", "image", notes="有工具", keywords=["封面图", "配图", "封面", "头图"]),
+            skill_node("brand-visual-guidelines", "品牌视觉规范", "🎯", 0, "content", "image", notes="未沉淀品牌视觉规范", keywords=["品牌视觉", "视觉规范", "品牌规范"]),
+            skill_node("graphic-layout", "图文排版", "🧾", 0, "content", "image", notes="未解锁稳定图文排版流程", keywords=["图文排版", "排版", "长图"]),
+            skill_node("video", "视频能力", "🎬", 0, "content", "writing", dependencies=["writing", "image"], notes="视频产线尚未解锁", keywords=["视频", "短视频", "视频制作"]),
+            skill_node("video-script", "视频脚本", "📜", 0, "content", "video", notes="未解锁视频脚本流程", keywords=["视频脚本", "分镜", "脚本"]),
+            skill_node("ai-text-to-video", "AI 文生视频", "🎞️", 0, "content", "video", notes="有工具但没用过", keywords=["文生视频", "AI 视频", "视频生成"]),
+            skill_node("subtitles-titles", "字幕/标题", "🔤", 0, "content", "video", notes="未解锁字幕和标题流程", keywords=["字幕", "标题", "视频标题"]),
+            skill_node("editing-workflow", "剪辑流程", "✂️", 0, "content", "video", notes="未解锁剪辑流程", keywords=["剪辑", "视频剪辑", "剪映"]),
+            skill_node("video-platform-publishing", "视频平台发布", "📺", 0, "content", "video", dependencies=["editing-workflow"], notes="未解锁视频平台发布流程", keywords=["视频发布", "B站", "抖音", "YouTube"]),
+        ],
     },
-    {
-        "id": "research",
-        "icon": "🔍",
-        "title": "深度研究",
-        "description": "多源研究、报告生成、信息整合和知识库沉淀。",
-        "skills": ["多源研究", "报告生成", "信息整合"],
-        "keywords": ["研究", "调研", "学习", "阅读", "知识", "wiki", "deep research", "quantding"],
-        "areas": ["learning"],
-        "tier": "foundation",
-        "linksTo": ["coding", "finance", "writing"],
-    },
-    {
-        "id": "writing",
-        "icon": "✍️",
-        "title": "写作能力",
-        "description": "技术博客、文学创作、文风学习和内容资产沉淀。",
-        "skills": ["技术博客", "文学创作", "文风学习"],
-        "keywords": ["写作", "博客", "文章", "创作", "文风", "内容", "随想"],
-        "tier": "foundation",
-        "linksTo": ["publishing", "voice", "translation"],
-    },
-    {
-        "id": "coding",
-        "icon": "💻",
-        "title": "编程能力",
-        "description": "代码生成、项目开发、Bug 修复、部署和 API 集成。",
-        "skills": ["代码生成", "项目开发", "Bug 修复"],
-        "keywords": ["代码", "开发", "bug", "api", "前端", "后端", "部署", "provider", "仓库", "模块", "skill"],
-        "tier": "execution",
-        "linksTo": ["publishing"],
-    },
-    {
-        "id": "scheduling",
-        "icon": "📅",
-        "title": "日程管理",
-        "description": "日历管理、提醒推送、时间规划和周期节奏维护。",
-        "skills": ["日历管理", "提醒推送", "时间规划"],
-        "keywords": ["日程", "日历", "提醒", "定时", "deadline", "截止", "本周", "年度复盘", "时间规划"],
-        "tier": "execution",
-        "linksTo": [],
-    },
-    {
-        "id": "shopping",
-        "icon": "🛒",
-        "title": "购物助手",
-        "description": "淘宝/京东比价、购物清单管理、自动下单和购买复盘。",
-        "skills": ["比价", "购物清单", "自动下单"],
-        "keywords": ["购物", "淘宝", "京东", "比价", "清单", "下单", "购买"],
-        "tier": "execution",
-        "linksTo": [],
-    },
-    {
-        "id": "translation",
-        "icon": "🌐",
-        "title": "翻译能力",
-        "description": "多语言翻译、文档本地化和跨语言内容改写。",
-        "skills": ["多语言翻译", "文档本地化", "术语统一"],
-        "keywords": ["翻译", "本地化", "多语言", "英文", "中文", "术语"],
-        "tier": "execution",
-        "linksTo": ["publishing"],
-    },
-    {
-        "id": "publishing",
-        "icon": "📤",
-        "title": "发布能力",
-        "description": "多平台发布、App Store 提交、博客和社交分发。",
-        "skills": ["多平台发布", "发布清单", "素材校验"],
-        "keywords": ["发布", "app store", "提交", "分发", "上线", "飞书", "社交", "博客发布"],
-        "tier": "output",
-        "linksTo": [],
-    },
-    {
-        "id": "voice",
-        "icon": "🔊",
-        "title": "语音能力",
-        "description": "TTS 语音合成、语音消息发送、播客脚本和音频产线。",
-        "skills": ["TTS 合成", "语音消息", "播客制作"],
-        "keywords": ["语音", "tts", "播客", "音频", "配音", "声音"],
-        "tier": "output",
-        "linksTo": [],
-    },
-    {
-        "id": "finance",
+    "invest": {
+        "id": "invest",
+        "name": "投资理财线",
         "icon": "📈",
-        "title": "投资理财",
-        "description": "股票分析、量化策略、财务追踪和投资复盘。",
-        "skills": ["股票分析", "量化策略", "财务追踪"],
-        "keywords": ["股票", "投资", "理财", "量化", "quant", "财务", "portfolio"],
-        "tier": "output",
-        "linksTo": [],
+        "skills": [
+            skill_node("investment-research", "投资研究", "📈", 1, "invest", notes="投资研究主能力，覆盖价值分析和跟踪提醒。", keywords=["投资", "理财", "股票", "研究", "财务", "portfolio"]),
+            skill_node("value-investing-analysis", "价值投资分析", "💎", 3, "invest", "investment-research", notes="100只A股四维度分析已完成，但推送停了", keywords=["价值投资", "四维度", "A股", "股票分析", "基本面"]),
+            skill_node("financial-data-api", "金融数据接口", "🔌", 1, "invest", "investment-research", notes="有接口，未稳定使用", keywords=["金融数据", "数据接口", "行情", "财务数据", "API"]),
+            skill_node("daily-tracking-push", "每日跟踪推送", "📬", 0, "invest", "investment-research", dependencies=["value-investing-analysis", "financial-data-api"], notes="之前有现在停了", keywords=["每日跟踪", "推送", "股票推送", "跟踪提醒"]),
+            skill_node("anomaly-alerts", "异常驱动提醒", "🚨", 0, "invest", "investment-research", dependencies=["financial-data-api"], notes="未解锁异常驱动提醒", keywords=["异常", "提醒", "预警", "异动", "告警"]),
+            skill_node("quant-trading", "量化交易", "📊", 0, "invest", "investment-research", dependencies=["financial-data-api"], notes="量化交易主流程未解锁", keywords=["量化", "交易", "策略", "回测", "quant"]),
+            skill_node("data-pipeline", "数据管道", "🧱", 1, "invest", "quant-trading", notes="Phase 1 跑过，不稳定", keywords=["数据管道", "pipeline", "数据清洗", "行情数据"]),
+            skill_node("strategy-backtest", "策略回测", "🧪", 0, "invest", "quant-trading", dependencies=["data-pipeline"], notes="未解锁策略回测流程", keywords=["策略回测", "回测", "backtest"]),
+            skill_node("paper-trading", "仿真交易", "🕹️", 0, "invest", "quant-trading", dependencies=["strategy-backtest"], notes="未解锁仿真交易流程", keywords=["仿真交易", "模拟交易", "paper trading"]),
+            skill_node("live-trading", "实盘对接", "🏦", 0, "invest", "quant-trading", dependencies=["paper-trading"], notes="未解锁实盘对接", keywords=["实盘", "券商", "交易接口", "下单"]),
+        ],
     },
-]
+    "system": {
+        "id": "system",
+        "name": "系统工具线",
+        "icon": "🔧",
+        "skills": [
+            skill_node("personal-os", "个人操作系统", "🔧", 1, "system", notes="个人操作系统主线，覆盖任务、知识库、工作台和调度。", keywords=["个人操作系统", "系统", "工作台", "自动化", "工具"]),
+            skill_node("task-management", "任务管理", "✅", 2, "system", "personal-os", notes="LLM Todo 本地能用", keywords=["任务", "todo", "LLM Todo", "规划", "优先级", "提醒", "复盘", "迁移"], areas=["system"]),
+            skill_node("local-run", "本地运行", "💻", 3, "system", "task-management", notes="稳定", keywords=["本地运行", "本地服务", "localhost", "8720"]),
+            skill_node("cloud-deploy", "上云部署", "☁️", 0, "system", "task-management", notes="未解锁上云部署", keywords=["上云", "部署", "云服务器", "公网"]),
+            skill_node("multi-device-access", "多端访问", "📱", 0, "system", "task-management", notes="未解锁多端访问", keywords=["多端", "手机", "平板", "同步", "访问"]),
+            skill_node("knowledge-base", "知识库", "📚", 0, "system", "personal-os", notes="未解锁稳定知识库", keywords=["知识库", "wiki", "知识", "归档", "知识图谱"], areas=["learning"]),
+            skill_node("agent-workbench-platform", "Agent 工作台平台化", "🧰", 1, "system", "personal-os", notes="Agent 工作台平台化已起步", keywords=["Agent 工作台", "平台化", "agent", "工作台"]),
+            skill_node("llm-todo-workbench", "LLM Todo 工作台", "🧭", 3, "system", "agent-workbench-platform", notes="稳定可用", keywords=["LLM Todo", "任务工作台", "todo 工作台"]),
+            skill_node("stock-analysis-site", "股票分析网站", "📈", 2, "system", "agent-workbench-platform", notes="能用", keywords=["股票分析网站", "股票网站", "投资网站"]),
+            skill_node("writing-review-site", "写稿审稿网站", "📝", 2, "system", "agent-workbench-platform", notes="能用", keywords=["写稿", "审稿", "文章网站", "写作网站"]),
+            skill_node("podcast-workbench", "播客制作工作台", "🎧", 0, "system", "agent-workbench-platform", notes="未解锁播客制作工作台", keywords=["播客工作台", "播客制作"]),
+            skill_node("video-workbench", "视频制作工作台", "🎬", 0, "system", "agent-workbench-platform", notes="未解锁视频制作工作台", keywords=["视频工作台", "视频制作"]),
+            skill_node("content-publishing-backend", "内容发布后台", "📤", 0, "system", "agent-workbench-platform", notes="未解锁内容发布后台", keywords=["内容发布后台", "发布后台", "CMS"]),
+            skill_node("agent-scheduling", "Agent 调度", "⏱️", 1, "system", "personal-os", notes="Agent 调度已起步", keywords=["Agent 调度", "调度", "定时任务", "cron", "自动化"]),
+            skill_node("cron-jobs", "Cron 定时任务", "🕒", 2, "system", "agent-scheduling", notes="能用，部分任务不稳定", keywords=["Cron", "定时", "定时任务", "计划任务"]),
+            skill_node("anomaly-notification", "异常通知", "📣", 0, "system", "agent-scheduling", notes="未解锁异常通知", keywords=["异常通知", "通知", "告警", "失败提醒"]),
+            skill_node("closed-loop-automation", "闭环自动化", "🔁", 0, "system", "agent-scheduling", dependencies=["cron-jobs", "anomaly-notification"], notes="未解锁闭环自动化", keywords=["闭环", "自动化", "自动执行", "自动修复"]),
+        ],
+    },
+    "life": {
+        "id": "life",
+        "name": "生活服务线",
+        "icon": "🏠",
+        "skills": [
+            skill_node("life", "生活", "🏠", 1, "life", notes="生活服务主线，覆盖健康、购物、旅游、育儿和报销。", keywords=["生活", "家庭", "家务", "服务"], areas=["life"]),
+            skill_node("home-health-record", "家庭健康档案", "🏥", 1, "life", "life", notes="有结构，不持续", keywords=["健康档案", "健康", "体检", "病历", "家庭健康"], areas=["life"]),
+            skill_node("shopping-list", "购物清单", "🛒", 1, "life", "life", notes="偶尔用", keywords=["购物清单", "购物", "淘宝", "京东", "清单"], areas=["life"]),
+            skill_node("travel-planning", "旅游规划", "🧳", 1, "life", "life", notes="偶尔用", keywords=["旅游", "旅行", "行程", "攻略", "酒店"], areas=["life"]),
+            skill_node("parenting-education", "育儿教育", "🧒", 1, "life", "life", notes="偶尔用", keywords=["育儿", "教育", "孩子", "亲子"], areas=["life"]),
+            skill_node("printing-3d", "3D打印", "🧊", 0, "life", "life", notes="未解锁 3D 打印流程", keywords=["3D打印", "打印", "建模"], areas=["life"]),
+            skill_node("reimbursement", "报销", "🧾", 0, "life", "life", notes="未解锁报销流程", keywords=["报销", "发票", "票据", "费用"], areas=["life"]),
+        ],
+    },
+    "growth": {
+        "id": "growth",
+        "name": "运营/增长线",
+        "icon": "🚀",
+        "skills": [
+            skill_node("growth", "运营与增长", "🚀", 0, "growth", notes="运营与增长主线尚未解锁", keywords=["运营", "增长", "流量", "变现", "KPI"]),
+            skill_node("data-collection-kpi", "数据采集（KPI 面板）", "📊", 0, "growth", "growth", notes="KPI 面板未解锁", keywords=["KPI", "数据采集", "指标", "面板"]),
+            skill_node("fan-tracking", "粉丝量追踪", "👥", 0, "growth", "data-collection-kpi", notes="微信公众号、知乎、CSDN、掘金、B站、小红书、GitHub 等粉丝数据待采集", keywords=["粉丝", "followers", "关注者", "B站", "GitHub"]),
+            skill_node("content-output-stats", "内容产出统计", "📈", 0, "growth", "data-collection-kpi", notes="文章数/月、播客数/月、视频数/月待统计", keywords=["内容产出", "文章数", "播客数", "视频数", "统计"]),
+            skill_node("revenue-tracking", "收入追踪", "💰", 0, "growth", "data-collection-kpi", notes="广告/流量收入、付费内容收入、投资收益待追踪", keywords=["收入", "广告", "付费内容", "投资收益", "变现"]),
+            skill_node("growth-skills", "增长技能", "📣", 0, "growth", "growth", notes="增长技能未解锁", keywords=["增长技能", "流量获取", "社群", "分发"]),
+            skill_node("seo-traffic", "SEO / 流量获取", "🔎", 0, "growth", "growth-skills", notes="未解锁 SEO / 流量获取", keywords=["SEO", "流量", "搜索", "获客"]),
+            skill_node("content-distribution-strategy", "内容分发策略", "🧭", 0, "growth", "growth-skills", notes="未解锁内容分发策略", keywords=["内容分发", "分发策略", "渠道"]),
+            skill_node("community-operations", "社群运营", "💬", 0, "growth", "growth-skills", notes="未解锁社群运营", keywords=["社群", "社群运营", "微信群", "社区"]),
+            skill_node("monetization-design", "变现模式设计", "💼", 0, "growth", "growth-skills", notes="未解锁变现模式设计", keywords=["变现", "商业模式", "付费", "收入"]),
+            skill_node("analysis-skills", "分析技能", "🧠", 0, "growth", "growth", notes="分析技能未解锁", keywords=["分析", "复盘", "竞品", "ROI"]),
+            skill_node("viral-analysis", "爆款分析", "🔥", 0, "growth", "analysis-skills", notes="哪篇火了、为什么", keywords=["爆款", "爆文", "热门", "火了"]),
+            skill_node("competitor-monitoring", "竞品/同行监控", "👀", 0, "growth", "analysis-skills", notes="未解锁竞品/同行监控", keywords=["竞品", "同行", "监控", "对标"]),
+            skill_node("time-roi", "时间投资回报率", "⏳", 0, "growth", "analysis-skills", notes="各领域时间 vs 产出", keywords=["时间投资回报率", "ROI", "时间投入", "产出"]),
+        ],
+    },
+}
+
+PRACTICAL_ABILITIES = [SKILL_TREES[line_id] for line_id in SKILL_TREE_ORDER if line_id in SKILL_TREES]
 
 ABILITY_LEVEL_THRESHOLDS = [0, 10, 30, 60, 100]
 
@@ -1400,27 +1481,186 @@ def earliest_task_date(tasks: list[dict]) -> str:
     return min(dates) if dates else ""
 
 
-def practical_abilities(tasks: list[dict], history: list[dict]) -> list[dict]:
+def skill_line_list(skill_trees: dict) -> list[dict]:
+    return [skill_trees[line_id] for line_id in SKILL_TREE_ORDER if line_id in skill_trees]
+
+
+def flatten_skill_lines(lines: list[dict]) -> list[dict]:
+    return [skill for line in lines for skill in line.get("skills", []) if isinstance(skill, dict)]
+
+
+def flatten_skill_trees(skill_trees: dict) -> list[dict]:
+    return flatten_skill_lines(skill_line_list(skill_trees))
+
+
+def skill_level_meta(level: object) -> dict:
+    try:
+        value = int(level)
+    except (TypeError, ValueError):
+        value = 0
+    return SKILL_LEVELS.get(max(0, min(5, value)), SKILL_LEVELS[0])
+
+
+def skill_dependency_edges(skills: list[dict]) -> list[dict]:
+    valid_ids = {skill.get("id") for skill in skills if skill.get("id")}
+    edges: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for skill in skills:
+        target = str(skill.get("id") or "")
+        if not target:
+            continue
+        parent_id = str(skill.get("parentId") or "")
+        raw_dependencies = skill.get("dependencies", [])
+        dependencies = raw_dependencies if isinstance(raw_dependencies, list) else []
+        for dependency in dependencies:
+            source = str(dependency or "")
+            if not source or source not in valid_ids or source == target:
+                continue
+            edge_type = "parent" if source == parent_id else "dependency"
+            marker = (source, target, edge_type)
+            if marker not in seen:
+                edges.append({"from": source, "to": target, "type": edge_type})
+                seen.add(marker)
+    return edges
+
+
+def annotate_skill_line(line: dict) -> None:
+    skills = [skill for skill in line.get("skills", []) if isinstance(skill, dict)]
+    skill_by_id = {skill.get("id"): skill for skill in skills if skill.get("id")}
+    children: dict[str, list[str]] = {str(skill.get("id")): [] for skill in skills if skill.get("id")}
+    for skill in skills:
+        parent_id = skill.get("parentId")
+        if parent_id in children:
+            children[str(parent_id)].append(str(skill.get("id")))
+
+    depth_cache: dict[str, int] = {}
+
+    def depth_for(skill: dict) -> int:
+        skill_id = str(skill.get("id") or "")
+        if skill_id in depth_cache:
+            return depth_cache[skill_id]
+        parent_id = skill.get("parentId")
+        parent = skill_by_id.get(parent_id)
+        depth_cache[skill_id] = depth_for(parent) + 1 if parent else 0
+        return depth_cache[skill_id]
+
+    for skill in skills:
+        level = max(0, min(5, int(skill.get("level") or 0)))
+        meta = skill_level_meta(level)
+        skill["level"] = level
+        skill["levelLabel"] = meta["label"]
+        skill["levelMarker"] = meta["marker"]
+        skill["levelClass"] = meta["className"]
+        skill["childrenIds"] = children.get(str(skill.get("id")), [])
+        skill["depth"] = depth_for(skill)
+        skill["tier"] = skill.get("tier") or ("foundation" if skill["depth"] == 0 else "execution" if skill["depth"] == 1 else "output")
+        skill["skills"] = skill.get("skills") or [skill_by_id[child_id].get("name", child_id) for child_id in skill["childrenIds"] if child_id in skill_by_id]
+
+    edges = skill_dependency_edges(skills)
+    links: dict[str, list[str]] = {str(skill.get("id")): [] for skill in skills if skill.get("id")}
+    for edge in edges:
+        links.setdefault(edge["from"], []).append(edge["to"])
+    for skill in skills:
+        skill["linksTo"] = links.get(str(skill.get("id")), [])
+
+    node_copies = {str(skill.get("id")): {**skill, "children": []} for skill in skills if skill.get("id")}
+    roots: list[dict] = []
+    for skill in skills:
+        skill_id = str(skill.get("id") or "")
+        node = node_copies.get(skill_id)
+        if not node:
+            continue
+        parent_id = str(skill.get("parentId") or "")
+        parent = node_copies.get(parent_id)
+        if parent:
+            parent["children"].append(node)
+        else:
+            roots.append(node)
+
+    line["tree"] = roots
+    line["edges"] = edges
+    line["summary"] = skill_tree_summary(skills)
+
+
+def finalize_skill_trees(skill_trees: dict) -> None:
+    for line in skill_line_list(skill_trees):
+        annotate_skill_line(line)
+
+
+def skill_tree_summary(skills: list[dict]) -> dict:
+    levels = [max(0, min(5, int(skill.get("level") or 0))) for skill in skills]
+    total = len(levels)
+    return {
+        "total": total,
+        "locked": len([level for level in levels if level == 0]),
+        "inProgress": len([level for level in levels if 1 <= level <= 3]),
+        "mastered": len([level for level in levels if level >= 4]),
+        "averageLevel": round(sum(levels) / total, 1) if total else 0,
+    }
+
+
+def skill_tree_kpis(skills: list[dict], history: list[dict]) -> list[dict]:
+    today = datetime.now().date()
+    recent_content_ids = {
+        task.get("id")
+        for skill in skills
+        if skill.get("line") == "content"
+        for task_id in skill.get("relatedTasks", [])
+        for task in history
+        if task.get("id") == task_id and task_completion_date(task) and (today - task_completion_date(task)).days <= 30
+    }
+    return [
+        {"id": "followers", "label": "粉丝量", "value": "待采集", "note": "KPI 数据源将在 Phase 2 接入"},
+        {"id": "content-output-30d", "label": "近30天内容产出", "value": str(len(recent_content_ids)), "note": "由完成任务粗略估算"},
+        {"id": "revenue", "label": "收入", "value": "待采集", "note": "按投资 / 内容 / 工具拆分"},
+        {"id": "time-roi", "label": "时间投资回报率", "value": "待采集", "note": "等待时间投入数据结构"},
+    ]
+
+
+def skill_tree_store() -> dict:
+    payload = read_json_object(SKILL_TREE_PATH, {"overrides": {}, "updated": ""})
+    overrides = payload.get("overrides", {})
+    payload["overrides"] = overrides if isinstance(overrides, dict) else {}
+    payload["updated"] = str(payload.get("updated", "") or SKILL_TREE_LAST_VERIFIED)
+    return payload
+
+
+def find_skill_node(skill_trees: dict, skill_id: str) -> dict | None:
+    for skill in flatten_skill_trees(skill_trees):
+        if skill.get("id") == skill_id:
+            return skill
+    return None
+
+
+def apply_skill_tree_overrides(skill_trees: dict, overrides: dict) -> None:
+    for skill in flatten_skill_trees(skill_trees):
+        override = overrides.get(skill.get("id"))
+        if not isinstance(override, dict):
+            continue
+        if "level" in override:
+            skill["level"] = max(0, min(5, int(override.get("level") or 0)))
+        if "notes" in override:
+            skill["notes"] = str(override.get("notes", ""))
+            skill["description"] = skill["notes"] or skill.get("description", "")
+        if isinstance(override.get("upgradeConditions"), list):
+            skill["upgradeConditions"] = [str(item) for item in override["upgradeConditions"] if str(item).strip()]
+        if override.get("lastVerified"):
+            skill["lastVerified"] = str(override["lastVerified"])
+
+
+def enrich_skill_tree(skill_trees: dict, tasks: list[dict], history: list[dict]) -> None:
     all_tasks = tasks + history
     done_ids = {task.get("id") for task in history if task.get("status") == "done"}
     current_ids = {task.get("id") for task in tasks}
-    abilities = []
-    for definition in PRACTICAL_ABILITIES:
-        related = [task for task in all_tasks if task_matches_ability(task, definition)]
+    for skill in flatten_skill_trees(skill_trees):
+        related = [task for task in all_tasks if task_matches_ability(task, skill)]
         related_ids = [str(task.get("id")) for task in related if task.get("id")]
         done_count = len([task for task in related if task.get("id") in done_ids])
         current_count = len([task for task in related if task.get("id") in current_ids])
         xp = done_count * 10 + current_count * 4
-        level, xp_to_next = ability_level(xp)
-        abilities.append(
+        _activity_level, xp_to_next = ability_level(xp)
+        skill.update(
             {
-                "id": definition["id"],
-                "name": f"{definition['icon']} {definition['title']}",
-                "icon": definition["icon"],
-                "title": definition["title"],
-                "description": definition["description"],
-                "level": level,
-                "maxLevel": 5,
                 "xp": xp,
                 "xpToNext": xp_to_next,
                 "relatedTasks": related_ids,
@@ -1428,12 +1668,76 @@ def practical_abilities(tasks: list[dict], history: list[dict]) -> list[dict]:
                 "doneCount": done_count,
                 "activeCount": current_count,
                 "unlockedAt": earliest_task_date(related),
-                "skills": definition["skills"],
-                "tier": definition["tier"],
-                "linksTo": definition["linksTo"],
             }
         )
-    return abilities
+
+
+def build_skill_trees(tasks: list[dict] | None = None, history: list[dict] | None = None) -> dict:
+    skill_trees = copy.deepcopy(SKILL_TREES)
+    apply_skill_tree_overrides(skill_trees, skill_tree_store()["overrides"])
+    if tasks is not None and history is not None:
+        enrich_skill_tree(skill_trees, tasks, history)
+    finalize_skill_trees(skill_trees)
+    return skill_trees
+
+
+def skill_tree_payload(tasks: list[dict] | None = None, history: list[dict] | None = None) -> dict:
+    if tasks is None:
+        tasks = load_tasks()
+    if history is None:
+        history = load_history()
+    store = skill_tree_store()
+    skill_trees = build_skill_trees(tasks, history)
+    lines = skill_line_list(skill_trees)
+    skills = flatten_skill_lines(lines)
+    dependencies = [{**edge, "line": line.get("id")} for line in lines for edge in line.get("edges", [])]
+    return {
+        "skillTrees": skill_trees,
+        "lines": lines,
+        "skills": skills,
+        "dependencies": dependencies,
+        "summary": skill_tree_summary(skills),
+        "kpis": skill_tree_kpis(skills, history),
+        "levelLegend": SKILL_LEVELS,
+        "updated": store.get("updated") or SKILL_TREE_LAST_VERIFIED,
+    }
+
+
+def practical_abilities(tasks: list[dict], history: list[dict]) -> list[dict]:
+    return skill_tree_payload(tasks, history)["skills"]
+
+
+def update_skill_node(skill_id: str, payload: dict) -> dict | None:
+    if not find_skill_node(SKILL_TREES, skill_id):
+        return None
+    incoming = payload.get("skill") if isinstance(payload.get("skill"), dict) else payload
+    if not isinstance(incoming, dict):
+        incoming = {}
+    store = skill_tree_store()
+    overrides = dict(store["overrides"])
+    current = dict(overrides.get(skill_id, {}))
+    changed = False
+
+    if "level" in incoming:
+        try:
+            level = int(incoming["level"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("技能等级必须是 0 到 5 的整数") from exc
+        if level < 0 or level > 5:
+            raise ValueError("技能等级必须是 0 到 5 的整数")
+        current["level"] = level
+        changed = True
+    if "notes" in incoming:
+        current["notes"] = str(incoming.get("notes") or "").strip()
+        changed = True
+    if changed:
+        current["lastVerified"] = str(datetime.now().date())
+        overrides[skill_id] = current
+        write_json_object(SKILL_TREE_PATH, {"updated": current["lastVerified"], "overrides": overrides}, "update-skill-tree")
+        append_log(f"更新技能节点：{skill_id} → Lv.{current.get('level', '未变更')}")
+
+    payload = skill_tree_payload()
+    return {"skill": find_skill_node(payload["skillTrees"], skill_id), **payload}
 
 
 def character_payload() -> dict:
@@ -1441,8 +1745,11 @@ def character_payload() -> dict:
     history = load_history()
     done = [task for task in history if task.get("status") == "done"]
     done_count = len(done)
-    abilities = practical_abilities(tasks, history)
-    total_ability_xp = sum(ability["xp"] for ability in abilities)
+    skill_tree_data = skill_tree_payload(tasks, history)
+    abilities = skill_tree_data["skills"]
+    ability_lines = skill_tree_data["lines"]
+    flat_abilities = abilities
+    total_ability_xp = sum(ability["xp"] for ability in flat_abilities)
     level = total_ability_xp // 50 + 1
     xp = total_ability_xp % 50
 
@@ -1516,13 +1823,19 @@ def character_payload() -> dict:
         },
     ]
 
-    core_capabilities = sorted(abilities, key=lambda item: (item["level"], item["xp"], item["relatedCount"]), reverse=True)[:5]
+    core_capabilities = sorted(flat_abilities, key=lambda item: (item["level"], item["xp"], item["relatedCount"]), reverse=True)[:5]
 
     return {
         "name": "效率管家",
         "level": level,
         "experience": {"current": xp, "next": 50, "totalCompleted": done_count, "percent": xp * 2, "totalAbilityXp": total_ability_xp},
         "abilities": abilities,
+        "abilityList": flat_abilities,
+        "abilityLines": ability_lines,
+        "skillTrees": skill_tree_data["skillTrees"],
+        "skillTreeSummary": skill_tree_data["summary"],
+        "skillTreeKpis": skill_tree_data["kpis"],
+        "levelLegend": skill_tree_data["levelLegend"],
         "coreCapabilities": core_capabilities,
         "achievements": achievements,
         "week": {"start": week_start.isoformat(), "end": week_end.isoformat(), "done": len(week_done), "total": len(week_total_ids)},
@@ -1758,6 +2071,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(reminders_payload())
             elif parsed.path == "/api/character":
                 self.send_json(character_payload())
+            elif parsed.path == "/api/skill-tree":
+                self.send_json(skill_tree_payload())
             elif parsed.path == "/api/docs":
                 self.send_json({"docs": doc_records()})
             elif parsed.path == "/api/doc":
@@ -1817,6 +2132,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", parsed.path)
         agent_match = re.fullmatch(r"/api/agents-status/([^/]+)", parsed.path)
+        skill_match = re.fullmatch(r"/api/skill-tree/([^/]+)", parsed.path)
         try:
             payload = self.read_json_body()
             if capability_match:
@@ -1827,6 +2143,10 @@ class Handler(BaseHTTPRequestHandler):
                 agent_id = urllib.parse.unquote(agent_match.group(1))
                 agent = update_agent_status(agent_id, payload)
                 self.send_json({"agent": agent, "agents": agents_payload()["agents"]} if agent else {"error": "agent not found"}, 200 if agent else 404)
+            elif skill_match:
+                skill_id = urllib.parse.unquote(skill_match.group(1))
+                result = update_skill_node(skill_id, payload)
+                self.send_json(result if result else {"error": "skill not found"}, 200 if result else 404)
             elif parsed.path == "/api/roadmap":
                 self.send_json(update_roadmap(payload))
             else:
