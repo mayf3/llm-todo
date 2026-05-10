@@ -1999,6 +1999,8 @@ def safe_web_path(path: str) -> Path:
         return WEB / "design.html"
     if path in {"/map", "/map/"}:
         return WEB / "map.html"
+    if path in {"/skill-tree", "/skill-tree/"}:
+        return WEB / "skill-tree.html"
     target = (WEB / path.lstrip("/")).resolve()
     if WEB not in target.parents and target != WEB:
         raise ValueError("path escapes web root")

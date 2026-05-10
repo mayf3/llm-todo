@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>龙虾技能树</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+    }
+
+    .skill-tree-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Header */
+    .st-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .st-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f0e6d3, #d4a574);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .st-header .st-summary {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      color: #8b949e;
+    }
+    .st-header .st-summary span { white-space: nowrap; }
+    .st-header .st-summary strong { color: #c9d1d9; }
+
+    /* Trunk tabs */
+    .st-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .st-tab {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      cursor: pointer;
+      font-size: 15px;
+      color: #8b949e;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .st-tab:hover {
+      border-color: #58a6ff;
+      color: #c9d1d9;
+    }
+    .st-tab.active {
+      border-color: #58a6ff;
+      background: #1c2128;
+      color: #f0e6d3;
+      font-weight: 600;
+    }
+    .st-tab .tab-level {
+      font-size: 11px;
+      margin-left: 6px;
+      opacity: 0.7;
+    }
+
+    /* Legend */
+    .st-legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: #161b22;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      flex-wrap: wrap;
+    }
+    .st-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .st-legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Tree container */
+    .st-tree-container {
+      position: relative;
+      background: #161b22;
+      border-radius: 12px;
+      border: 1px solid #30363d;
+      padding: 32px;
+      min-height: 600px;
+      overflow: auto;
+    }
+
+    /* Node styles */
+    .st-node {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .st-node-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      position: relative;
+      z-index: 1;
+      min-width: 160px;
+    }
+    .st-node-row:hover {
+      transform: translateX(4px);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .st-node-row.clicked {
+      border-color: #58a6ff !important;
+      box-shadow: 0 0 12px rgba(88,166,255,0.3);
+    }
+
+    /* Level colors */
+    .st-level-0 .st-node-row { background: #1c2128; border-color: #30363d; color: #484f58; }
+    .st-level-1 .st-node-row { background: rgba(88,166,255,0.08); border-color: rgba(88,166,255,0.2); }
+    .st-level-2 .st-node-row { background: rgba(88,166,255,0.15); border-color: rgba(88,166,255,0.3); }
+    .st-level-3 .st-node-row { background: rgba(63,185,80,0.12); border-color: rgba(63,185,80,0.25); }
+    .st-level-4 .st-node-row { background: rgba(210,153,34,0.12); border-color: rgba(210,153,34,0.25); }
+    .st-level-5 .st-node-row { background: rgba(191,120,224,0.12); border-color: rgba(191,120,224,0.25); }
+
+    .st-node-icon { font-size: 18px; line-height: 1; }
+    .st-node-name { font-weight: 500; font-size: 14px; }
+    .st-node-level {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      white-space: nowrap;
+    }
+    .st-node-xp {
+      font-size: 10px;
+      color: #8b949e;
+      margin-left: auto;
+    }
+
+    /* Connecting lines */
+    .st-children {
+      margin-left: 32px;
+      padding-left: 20px;
+      border-left: 1px solid #30363d;
+      position: relative;
+    }
+    .st-children::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -1px;
+      width: 8px;
+      height: 1px;
+      background: #30363d;
+    }
+
+    /* Detail panel */
+    .st-detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .st-detail-overlay.open { display: flex; }
+
+    .st-detail-panel {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px;
+      max-width: 520px;
+      width: 100%;
+      position: relative;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .st-detail-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #8b949e;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .st-detail-close:hover { color: #f0e6d3; }
+
+    .st-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .st-detail-header .icon { font-size: 28px; }
+    .st-detail-header h2 { font-size: 20px; font-weight: 600; }
+    .st-detail-level-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .st-detail-section {
+      margin-bottom: 16px;
+    }
+    .st-detail-section h3 {
+      font-size: 13px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .st-detail-section p, .st-detail-section ul {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #c9d1d9;
+    }
+    .st-detail-section ul {
+      padding-left: 20px;
+    }
+    .st-detail-section li { margin-bottom: 4px; }
+
+    .st-detail-xp-bar {
+      height: 6px;
+      background: #30363d;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .st-detail-xp-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Empty/Loading */
+    .st-loading, .st-empty {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      color: #8b949e;
+      font-size: 16px;
+    }
+
+    .st-loading::after {
+      content: '';
+      width: 24px;
+      height: 24px;
+      border: 3px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      margin-left: 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .skill-tree-page { padding: 12px; }
+      .st-tree-container { padding: 16px; }
+      .st-node-row { min-width: 120px; padding: 6px 12px; }
+      .st-children { margin-left: 16px; padding-left: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="skill-tree-page" id="app">
+    <div class="st-header">
+      <h1>🌳 龙虾技能树</h1>
+      <div class="st-summary" id="st-summary"></div>
+    </div>
+    <div class="st-tabs" id="st-tabs"></div>
+    <div class="st-legend" id="st-legend"></div>
+    <div class="st-tree-container" id="st-tree">
+      <div class="st-loading">加载技能数据</div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="st-detail-overlay" id="st-detail">
+    <div class="st-detail-panel">
+      <button class="st-detail-close" onclick="closeDetail()">✕</button>
+      <div id="st-detail-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const LEVEL_COLORS = {
+      'gray': '#484f58',
+      'lightblue': '#58a6ff',
+      'blue': '#1f6feb',
+      'green': '#3fb950',
+      'gold': '#d49922',
+      'purple': '#bf78e0',
+    };
+    const LEVEL_BG_COLORS = {
+      'gray': 'rgba(48,54,61,0.3)',
+      'lightblue': 'rgba(88,166,255,0.08)',
+      'blue': 'rgba(88,166,255,0.15)',
+      'green': 'rgba(63,185,80,0.12)',
+      'gold': 'rgba(210,153,34,0.12)',
+      'purple': 'rgba(191,120,224,0.12)',
+    };
+
+    let state = {
+      trees: {},
+      lines: [],
+      skills: [],
+      edges: [],
+      allEdgesByLine: {},
+      summary: {},
+      kpis: [],
+      levelLegend: {},
+      activeLine: null,
+      selectedSkillId: null,
+    };
+
+    async function init() {
+      try {
+        const res = await fetch('/api/skill-tree');
+        const data = await res.json();
+
+        state.trees = data.skillTrees || {};
+        state.lines = data.lines || Object.values(state.trees);
+        state.skills = data.skills || [];
+        state.edges = data.edges || [];
+        state.summary = data.summary || {};
+        state.kpis = data.kpis || [];
+        state.levelLegend = data.levelLegend || {};
+
+        // Index edges by line
+        state.allEdgesByLine = {};
+        for (const edge of state.edges) {
+          const line = edge.line || 'content';
+          if (!state.allEdgesByLine[line]) state.allEdgesByLine[line] = [];
+          state.allEdgesByLine[line].push(edge);
+        }
+
+        renderSummary();
+        renderLegend();
+        renderTabs();
+
+        // Default to first line
+        const lineIds = Object.keys(state.trees);
+        if (lineIds.length > 0) {
+          activateLine(lineIds[0]);
+        }
+      } catch (err) {
+        document.getElementById('st-tree').innerHTML =
+          `<div class="st-empty">❌ 加载失败：${err.message}</div>`;
+      }
+    }
+
+    function renderSummary() {
+      const s = state.summary;
+      document.getElementById('st-summary').innerHTML = `
+        <span>🏆 <strong>${s.total || 0}</strong> 技能</span>
+        <span>🔒 <strong>${s.locked || 0}</strong> 未解锁</span>
+        <span>🔄 <strong>${s.inProgress || 0}</strong> 进行中</span>
+        <span>⭐ <strong>${s.mastered || 0}</strong> 精通</span>
+        <span>📊 均级 <strong>${(s.averageLevel || 0).toFixed(1)}</strong></span>
+      `;
+    }
+
+    function renderLegend() {
+      const legend = state.levelLegend;
+      const container = document.getElementById('st-legend');
+      container.innerHTML = Object.entries(legend).map(([level, info]) => `
+        <div class="st-legend-item">
+          <div class="st-legend-dot" style="background: ${LEVEL_COLORS[info.color] || '#484f58'}"></div>
+          <span>Lv.${level} ${info.marker} ${info.label}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('st-tabs');
+      const lineIds = Object.keys(state.trees);
+      container.innerHTML = lineIds.map(lineId => {
+        const tree = state.trees[lineId];
+        const s = tree.summary || {};
+        return `<div class="st-tab${state.activeLine === lineId ? ' active' : ''}"
+                     data-line="${lineId}"
+                     onclick="activateLine('${lineId}')">
+          ${tree.icon} ${tree.name}
+          <span class="tab-level">${s.inProgress || 0}/${s.total || 0}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function activateLine(lineId) {
+      state.activeLine = lineId;
+      state.selectedSkillId = null;
+
+      // Update tabs
+      document.querySelectorAll('.st-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.line === lineId);
+      });
+
+      renderTree(lineId);
+    }
+
+    function renderTree(lineId) {
+      const tree = state.trees[lineId];
+      const container = document.getElementById('st-tree');
+      if (!tree || !tree.tree || tree.tree.length === 0) {
+        container.innerHTML = '<div class="st-empty">暂无技能数据</div>';
+        return;
+      }
+
+      container.innerHTML = tree.tree.map(node => renderNode(node, lineId)).join('');
+    }
+
+    function renderNode(node, lineId, depth = 0) {
+      const levelClass = `st-level-${node.level}`;
+      const marker = node.levelMarker || '🔒';
+      const xpInfo = node.xpToNext > 0
+        ? `EXP ${node.xp}/${node.xp + node.xpToNext}`
+        : '';
+
+      let html = `<div class="st-node ${levelClass}" data-id="${node.id}">
+        <div class="st-node-row${state.selectedSkillId === node.id ? ' clicked' : ''}"
+             onclick="selectSkill('${node.id}', '${lineId}')">
+          <span class="st-node-icon">${node.icon || marker}</span>
+          <span class="st-node-name">${node.title || node.name}</span>
+          <span class="st-node-level">Lv.${node.level} ${marker}</span>
+          ${xpInfo ? `<span class="st-node-xp">${xpInfo}</span>` : ''}
+        </div>`;
+
+      // Dependency lines
+      const lineEdges = state.allEdgesByLine[lineId] || [];
+      const depEdges = lineEdges.filter(e => e.to === node.id && e.type === 'dependency');
+      if (depEdges.length > 0) {
+        const depNames = depEdges.map(e => {
+          const depSkill = state.skills.find(s => s.id === e.from);
+          return depSkill ? `${depSkill.marker || ''} ${depSkill.title || depSkill.name}` : e.from;
+        });
+        html += `<div style="margin:2px 0 8px 36px;font-size:11px;color:#8b949e;">
+          依赖：${depNames.join(' → ')}</div>`;
+      }
+
+      // Children
+      const children = node.children || [];
+      if (children.length > 0) {
+        html += `<div class="st-children">
+          ${children.map(child => renderNode(child, lineId, depth + 1)).join('')}
+        </div>`;
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function selectSkill(skillId, lineId) {
+      state.selectedSkillId = skillId;
+
+      // Update highlight
+      document.querySelectorAll('.st-node-row').forEach(el => el.classList.remove('clicked'));
+      const selectedEl = document.querySelector(`.st-node[data-id="${skillId}"] .st-node-row`);
+      if (selectedEl) selectedEl.classList.add('clicked');
+
+      // Find skill detail
+      const skill = state.skills.find(s => s.id === skillId);
+      if (!skill) return;
+
+      // Set XP bar color
+      const levelInfo = state.levelLegend[String(skill.level)] || {};
+      const barColor = LEVEL_COLORS[levelInfo.color] || '#484f58';
+
+      // Get dependencies
+      const lineEdges = state.allEdgesByLine[lineId] || [];
+      const depEdges = lineEdges.filter(e => e.to === skillId);
+
+      // Build conditions
+      const conditions = skill.upgradeConditions || [];
+      const conditionHtml = conditions.length > 0
+        ? `<ul>${conditions.map(c => `<li>${c}</li>`).join('')}</ul>`
+        : '<p>暂无升级条件</p>';
+
+      const xpProgress = skill.xpToNext > 0
+        ? Math.min(100, Math.round((skill.xp / (skill.xp + skill.xpToNext)) * 100))
+        : 100;
+
+      document.getElementById('st-detail-content').innerHTML = `
+        <div class="st-detail-header">
+          <span class="icon">${skill.icon || skill.levelMarker}</span>
+          <h2>${skill.title || skill.name}</h2>
+          <span class="st-detail-level-badge" style="background:${LEVEL_BG_COLORS[levelInfo.color] || 'rgba(48,54,61,0.3)'};
+               color:${LEVEL_COLORS[levelInfo.color] || '#484f58'};">
+            Lv.${skill.level} ${skill.levelLabel || skill.levelMarker}
+          </span>
+        </div>
+
+        <div class="st-detail-section">
+          <h3>描述</h3>
+          <p>${skill.description || skill.notes || '暂无描述'}</p>
+        </div>
+
+        ${skill.xpToNext > 0 ? `
+        <div class="st-detail-section">
+          <h3>经验值</h3>
+          <div class="st-detail-xp-bar">
+            <div class="st-detail-xp-bar-fill" style="width:${xpProgress}%;background:${barColor}"></div>
+          </div>
+          <p style="font-size:13px;color:#8b949e;text-align:right;">
+            ${skill.xp} / ${skill.xp + skill.xpToNext} EXP
+          </p>
+        </div>` : ''}
+
+        ${depEdges.length > 0 ? `
+        <div class="st-detail-section">
+          <h3>前置依赖</h3>
+          <ul>${depEdges.map(e => {
+            const dep = state.skills.find(s => s.id === e.from);
+            return `<li>${dep ? dep.marker + ' ' + (dep.title || dep.name) : e.from}</li>`;
+          }).join('')}</ul>
+        </div>` : ''}
+
+        <div class="st-detail-section">
+          <h3>升级条件</h3>
+          ${conditionHtml}
+        </div>
+
+        <div class="st-detail-section">
+          <h3>上次验证</h3>
+          <p>${skill.lastVerified || '未记录'}</p>
+        </div>
+
+        ${skill.relatedCount > 0 ? `
+        <div class="st-detail-section">
+          <h3>相关任务</h3>
+          <p>共 ${skill.relatedCount} 个关联任务（进行中 ${skill.activeCount}）</p>
+        </div>` : ''}
+      `;
+
+      document.getElementById('st-detail').classList.add('open');
+    }
+
+    function closeDetail() {
+      document.getElementById('st-detail').classList.remove('open');
+    }
+
+    // Close on overlay click
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('st-detail').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('st-detail')) closeDetail();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDetail();
+      });
+    });
+
+    init();
+  </script>
+</body>
+</html>
