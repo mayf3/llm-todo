@@ -38,6 +38,7 @@
         </div>
         <div id="view-tabs" class="view-tabs" role="tablist" aria-label="任务视图">
           <button type="button" class="active" data-task-view="tasks">当前</button>
+          <button type="button" data-task-view="week">📅 本周计划</button>
           <button type="button" data-task-view="history">历史</button>
         </div>
         <section id="task-panel">
@@ -63,6 +64,16 @@
         </section>
         <section id="history-panel" hidden>
           <div id="history-list" class="task-list history-list"></div>
+        </section>
+        <section id="week-panel" hidden>
+          <div class="week-header">
+            <div class="week-title-row">
+              <h2>📅 本周计划</h2>
+              <span id="week-range" class="week-range"></span>
+            </div>
+            <div class="week-progress" id="week-progress"></div>
+          </div>
+          <div id="week-grid" class="week-grid"></div>
         </section>
       </section>
 

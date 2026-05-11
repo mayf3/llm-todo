@@ -194,7 +194,155 @@ function renderViewTabs() {
   });
   document.getElementById("task-panel").hidden = activeView !== "tasks";
   document.getElementById("history-panel").hidden = activeView !== "history";
+  document.getElementById("week-panel").hidden = activeView !== "week";
   document.getElementById("status-filter").hidden = activeView !== "tasks";
+  if (activeView === "week") renderWeekPlan();
+}
+
+// ===== Week Plan =====
+function getWeekDateRange() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
+  const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Mon=0 offset
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diff);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+  return { monday, sunday, days, today: now };
+}
+
+function formatDateShort(d) {
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
+function renderWeekPlan() {
+  const { monday, sunday, days, today } = getWeekDateRange();
+  const dayNames = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+  const todayStr = today.toISOString().slice(0, 10);
+
+  // Update header
+  const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+  const weekEnd = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+  document.getElementById("week-range").textContent = `${weekStart} ~ ${weekEnd}`;
+
+  // Group tasks by day
+  const tasks = state?.tasks || [];
+  const dayTasks = {};
+  const unscheduled = [];
+  const allDueThisWeek = [];
+
+  days.forEach((d) => {
+    const key = d.toISOString().slice(0, 10);
+    dayTasks[key] = [];
+  });
+
+  tasks.forEach((task) => {
+    if (task.status === "done" || task.status === "dropped") return; // skip completed
+    const due = task.due;
+    if (due) {
+      // Check if due date falls within this week
+      const dueDate = new Date(due);
+      if (dueDate >= new Date(weekStart) && dueDate <= new Date(weekEnd + "T23:59:59")) {
+        const dueKey = due;
+        if (dayTasks[dueKey]) {
+          dayTasks[dueKey].push(task);
+        } else {
+          unscheduled.push(task);
+        }
+        allDueThisWeek.push(task);
+      } else if (due < weekStart && task.status === "active") {
+        // Overdue: show on Monday
+        dayTasks[weekStart].push(task);
+      } else if (task.horizon === "week" || task.horizon === "today") {
+        unscheduled.push(task);
+      }
+    } else if (task.horizon === "week" || task.horizon === "today") {
+      unscheduled.push(task);
+    }
+  });
+
+  // Count total and done
+  const totalWeek = allDueThisWeek.length;
+  const doneCount = allDueThisWeek.filter((t) => t.status === "done").length;
+  const pct = totalWeek > 0 ? Math.round((doneCount / totalWeek) * 100) : 0;
+
+  document.getElementById("week-progress").innerHTML = `
+    <div class="week-progress-fill" style="width:${pct}%"></div>
+  `;
+
+  // Render grid
+  const grid = document.getElementById("week-grid");
+  grid.innerHTML = days
+    .map((d, i) => {
+      const key = d.toISOString().slice(0, 10);
+      const items = dayTasks[key] || [];
+      const isToday = isSameDay(d, today);
+      const dayLabel = `${dayNames[i]} ${formatDateShort(d)}`;
+
+      const taskHtml = items
+        .sort((a, b) => (a.priority === "high" ? -1 : 1))
+        .map((task) => {
+          const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
+          const statusIcon = task.status === "active" ? "" : `[${escapeHtml(statusLabels[task.status] || task.status)}]`;
+          return `<div class="week-task-item ${escapeHtml(task.status)}" title="${escapeAttr(task.title)}">
+            <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
+            <span class="week-task-meta">${statusIcon} ${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")}</span>
+            <span class="week-task-actions" style="display:flex;gap:4px;margin-top:4px;">
+              ${task.status === "active" ? `<button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button><button type="button" data-action="waiting" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">⏳</button>` : ""}
+              ${task.status === "waiting" ? `<button type="button" data-action="active" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">▶️</button><button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button>` : ""}
+              <button type="button" data-action="dropped" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">❌</button>
+            </span>
+          </div>`;
+        })
+        .join("");
+
+      return `<div class="week-day-card">
+        <div class="week-day-header${isToday ? " today" : ""}">
+          <span>${dayLabel}</span>
+          <span class="week-day-count">${items.length}</span>
+        </div>
+        <div class="week-day-body">
+          ${items.length > 0 ? taskHtml : '<div class="week-empty" style="padding:12px;font-size:0.8rem">—</div>'}
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  // Unscheduled section
+  if (unscheduled.length > 0) {
+    const unsatHtml = unscheduled
+      .map((task) => {
+        const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
+        return `<div class="week-task-item ${escapeHtml(task.status)}" onclick="openTaskDetail('${escapeAttr(task.id)}')" title="${escapeAttr(task.title)}">
+          <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
+          <span class="week-task-meta">${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")} · 未安排日期</span>
+        </div>`;
+      })
+      .join("");
+
+    grid.insertAdjacentHTML("afterend", `<div class="week-unscheduled">
+      <h3>📌 待安排 (${unscheduled.length})</h3>
+      <div class="week-unscheduled-list">${unsatHtml}</div>
+    </div>`);
+  }
+}
+
+function escapeAttr(s) {
+  if (!s) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function taskMatchesFilters(task) {
@@ -489,9 +637,23 @@ async function sendChat(content) {
   renderChat();
   chatMessages.push({ role: "assistant", content: "处理中..." });
   renderChat();
+
+  const provider = providerValue();
+  // 判断是否支持流式输出
+  const streamingProviders = ["openai-compat", "glm"];
+  const useStream = streamingProviders.includes(provider);
+
+  if (useStream) {
+    await sendChatStream(content, provider);
+  } else {
+    await sendChatSync(content, provider);
+  }
+}
+
+async function sendChatSync(content, provider) {
   const response = await api("/api/chat", {
     method: "POST",
-    body: JSON.stringify({ provider: providerValue(), messages: chatMessages.filter((item) => item.content !== "处理中...") }),
+    body: JSON.stringify({ provider, messages: chatMessages.filter((item) => item.content !== "处理中...") }),
   });
   chatMessages = chatMessages.filter((item) => item.content !== "处理中...");
   chatMessages.push({ role: "assistant", content: response.text });
@@ -505,6 +667,86 @@ async function sendChat(content) {
   renderHistory();
   renderDocs();
   renderChat();
+}
+
+async function sendChatStream(content, provider) {
+  // 移除 "处理中..." 占位
+  chatMessages = chatMessages.filter((item) => item.content !== "处理中...");
+  chatMessages.push({ role: "assistant", content: "" });
+  const assistantIndex = chatMessages.length - 1;
+
+  const token = tokenValue();
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  try {
+    const response = await fetch("/api/chat/stream", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ provider, messages: chatMessages.filter((item) => item.role !== "assistant" || item.content !== "") }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      chatMessages[assistantIndex] = { role: "assistant", content: `错误: ${errorData.error || response.statusText}` };
+      renderChat();
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let fullText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+        const payload = trimmed.slice(6);
+        if (payload === "[DONE]") continue;
+
+        try {
+          const data = JSON.parse(payload);
+          if (data.error) {
+            chatMessages[assistantIndex] = { role: "assistant", content: `错误: ${data.error}` };
+            renderChat();
+            return;
+          }
+          if (data.content) {
+            fullText += data.content;
+            chatMessages[assistantIndex] = { role: "assistant", content: fullText };
+            renderChat();
+          }
+          if (data.done) {
+            fullText = data.text || fullText;
+            chatMessages[assistantIndex] = { role: "assistant", content: fullText };
+            if (data.state) {
+              state = data.state;
+              historyState = { tasks: data.state.history || historyState.tasks };
+              renderStats();
+              renderTaskFilterOptions();
+              renderHorizons();
+              renderViewTabs();
+              renderTasks();
+              renderHistory();
+              renderDocs();
+            }
+            renderChat();
+          }
+        } catch { /* ignore parse errors */ }
+      }
+    }
+  } catch (error) {
+    chatMessages[assistantIndex] = { role: "assistant", content: `网络错误: ${error.message}` };
+    renderChat();
+  }
 }
 
 async function updateTaskStatus(id, status) {
@@ -566,6 +808,14 @@ async function init() {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
     await updateTaskStatus(button.dataset.id, button.dataset.action);
+  });
+
+  // Week panel action buttons
+  document.getElementById("week-grid")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    await updateTaskStatus(button.dataset.id, button.dataset.action);
+    renderWeekPlan(); // Re-render after status change
   });
 
   document.getElementById("doc-list").addEventListener("click", async (event) => {
