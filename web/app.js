@@ -13,6 +13,8 @@ const areaLabels = { system: "系统", life: "生活", learning: "学习", work:
 const priorityLabels = { high: "高", medium: "中", low: "低" };
 const kindLabels = { index: "索引", horizon: "时间尺度", area: "领域", log: "日志", review: "评审", page: "页面" };
 const priorityMarks = { high: "🔴", medium: "🟡", low: "⚪" };
+const typeLabels = { personal: "个人", agent: "Agent", review: "评审", discuss: "讨论" };
+const typeColors = { personal: "#1677ff", agent: "#722ed1", review: "#fa8c16", discuss: "#52c41a" };
 const agentStatusLabels = { active: "活跃", idle: "空闲", disabled: "停用" };
 const horizonRanks = { today: 0, week: 1, month: 2, quarter: 3, year: 4, decade: 5, lifetime: 6 };
 const horizonDocLabels = [
@@ -156,11 +158,13 @@ function renderTaskFilterOptions() {
   const areaFilter = document.getElementById("area-filter");
   const priorityFilter = document.getElementById("priority-filter");
   const tagFilter = document.getElementById("tag-filter");
+  const typeFilter = document.getElementById("type-filter");
   const previous = {
     horizon: horizonFilter.value,
     area: areaFilter.value,
     priority: priorityFilter.value,
     tag: tagFilter.value,
+    type: typeFilter ? typeFilter.value : "",
   };
 
   horizonFilter.innerHTML = optionHtml("", "全部时间尺度", previous.horizon) + uniqueValues(tasks, "horizon").map((value) => optionHtml(value, horizonLabels[value] || value, previous.horizon)).join("");
@@ -168,6 +172,10 @@ function renderTaskFilterOptions() {
   priorityFilter.innerHTML = optionHtml("", "全部优先级", previous.priority) + ["high", "medium", "low"].map((value) => optionHtml(value, `${priorityMarks[value] || ""} ${priorityLabels[value] || value}`, previous.priority)).join("");
   const tags = [...new Set(tasks.flatMap((task) => (Array.isArray(task.tags) ? task.tags : [])))].sort((a, b) => String(a).localeCompare(String(b), "zh-CN"));
   tagFilter.innerHTML = optionHtml("", "全部标签", previous.tag) + tags.map((value) => optionHtml(value, `#${value}`, previous.tag)).join("");
+
+  if (typeFilter) {
+    typeFilter.innerHTML = optionHtml("", "全部类型", previous.type) + Object.entries(typeLabels).map(([value, label]) => optionHtml(value, label, previous.type)).join("");
+  }
 }
 
 function renderTags(task) {
@@ -352,6 +360,8 @@ function taskMatchesFilters(task) {
   const area = document.getElementById("area-filter").value;
   const priority = document.getElementById("priority-filter").value;
   const tag = document.getElementById("tag-filter").value;
+  const typeEl = document.getElementById("type-filter");
+  const type = typeEl ? typeEl.value : "";
   const tags = Array.isArray(task.tags) ? task.tags : [];
   const haystack = `${task.title || ""} ${task.nextAction || ""} ${task.notes || ""} ${tags.join(" ")}`.toLowerCase();
   return (
@@ -360,15 +370,20 @@ function taskMatchesFilters(task) {
     (!horizon || task.horizon === horizon) &&
     (!area || task.area === area) &&
     (!priority || task.priority === priority) &&
-    (!tag || tags.includes(tag))
+    (!tag || tags.includes(tag)) &&
+    (!type || (task.type || "personal") === type)
   );
 }
 
 function renderTaskCard(task, includeStatus = false) {
+  const taskType = task.type || "personal";
+  const typeColor = typeColors[taskType] || "#1677ff";
+  const typeLabel = typeLabels[taskType] || taskType;
   return `
     <article class="task-item ${escapeHtml(task.status)} urgency-${escapeHtml(taskGroupId(task))}">
       <div>
         <strong>${escapeHtml(task.title)}</strong>
+        <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:${typeColor}20;color:${typeColor};font-size:11px;margin-left:6px;vertical-align:middle;">${escapeHtml(typeLabel)}</span>
         <span>${taskMeta(task, includeStatus)}</span>
         ${renderTags(task)}
         <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
@@ -771,7 +786,7 @@ async function init() {
   window.addEventListener("hashchange", renderIndexTab);
 
   document.getElementById("status-filter").addEventListener("change", renderTasks);
-  ["task-search", "horizon-filter", "area-filter", "priority-filter", "tag-filter"].forEach((id) => {
+  ["task-search", "horizon-filter", "area-filter", "priority-filter", "tag-filter", "type-filter"].forEach((id) => {
     const node = document.getElementById(id);
     node.addEventListener(node.tagName === "INPUT" ? "input" : "change", renderTasks);
   });
