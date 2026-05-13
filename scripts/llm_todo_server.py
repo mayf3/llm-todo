@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
+import hmac
 import calendar
 import json
 import os
@@ -64,6 +66,7 @@ CURRENT_STATUSES = {"active", "waiting"}
 ARCHIVE_STATUSES = {"done", "dropped"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
 TASK_TYPES = {"personal", "agent", "review", "discuss"}
+TASK_SUB_STATUSES = {"pending", "in_progress", "submitted"}
 DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
@@ -240,6 +243,11 @@ def normalize_task_type(value: object) -> str:
     return task_type if task_type in TASK_TYPES else "personal"
 
 
+def normalize_sub_status(value: object) -> str:
+    sub_status = str(value if value is not None else "").strip().lower()
+    return sub_status if sub_status in TASK_SUB_STATUSES else "pending"
+
+
 def parse_iso_date(value: object) -> date | None:
     text = str(value if value is not None else "").strip()[:10]
     if not text:
@@ -310,6 +318,7 @@ def normalize_task(task: dict, default_status: str = "active") -> dict:
         "status": status,
         "type": normalize_task_type(task.get("type")),
         "assignee": clean_text(task.get("assignee"), 80),
+        "subStatus": normalize_sub_status(task.get("subStatus")),
         "horizon": horizon,
         "area": normalize_area(task.get("area"), "life"),
         "priority": priority,
@@ -488,8 +497,172 @@ def capabilities_payload() -> dict:
 
 def agents_payload() -> dict:
     payload = read_json_object(AGENTS_PATH, {"agents": []})
-    payload["agents"] = [agent for agent in payload.get("agents", []) if isinstance(agent, dict)]
-    return payload
+    agents = [agent for agent in payload.get("agents", []) if isinstance(agent, dict) and "token" not in agent]
+    return {"agents": agents}
+
+
+def load_agents() -> dict:
+    payload = read_json_object(AGENTS_PATH, {"agents": [], "sessions": {}})
+    raw_accounts = payload.get("accounts")
+    if not isinstance(raw_accounts, list):
+        candidate_agents = payload.get("agents", [])
+        raw_accounts = candidate_agents if isinstance(candidate_agents, list) and any(isinstance(agent, dict) and "token" in agent for agent in candidate_agents) else []
+
+    accounts: list[dict] = []
+    seen_names: set[str] = set()
+    seen_ids: set[str] = set()
+    for raw_agent in raw_accounts:
+        if not isinstance(raw_agent, dict):
+            continue
+        name = clean_text(raw_agent.get("name"), 80)
+        token = clean_text(raw_agent.get("token"), 512)
+        if not name or not token:
+            continue
+        agent_id = clean_text(raw_agent.get("id"), 80) or f"agent-{uuid.uuid4().hex[:10]}"
+        marker = name.lower()
+        if marker in seen_names or agent_id in seen_ids:
+            continue
+        accounts.append(
+            {
+                "id": agent_id,
+                "name": name,
+                "token": token,
+                "created": clean_text(raw_agent.get("created"), 30, str(datetime.now().date())),
+            }
+        )
+        seen_names.add(marker)
+        seen_ids.add(agent_id)
+
+    raw_sessions = payload.get("sessions", {})
+    sessions = raw_sessions if isinstance(raw_sessions, dict) else {}
+    sessions = {str(jwt): session for jwt, session in sessions.items() if isinstance(session, dict)}
+    return {"agents": accounts, "sessions": sessions}
+
+
+def save_agents(data: dict) -> None:
+    payload = read_json_object(AGENTS_PATH, {"agents": []})
+    accounts = [agent for agent in data.get("agents", []) if isinstance(agent, dict)]
+    sessions = data.get("sessions", {})
+    payload["accounts"] = accounts
+    payload["sessions"] = sessions if isinstance(sessions, dict) else {}
+    write_json_object(AGENTS_PATH, payload, "save-agent-accounts")
+
+
+def unique_agent_id(name: str, existing: list[dict], preferred: object = "") -> str:
+    used = {str(agent.get("id", "")) for agent in existing}
+    preferred_id = clean_text(preferred, 80)
+    if preferred_id and preferred_id not in used:
+        return preferred_id
+    base = re.sub(r"[^a-z0-9_-]+", "-", name.lower()).strip("-") or "agent"
+    candidate = base[:48]
+    while candidate in used:
+        candidate = f"{base[:40]}-{uuid.uuid4().hex[:6]}"
+    return candidate
+
+
+def create_agent_account(payload: dict) -> dict:
+    data = load_agents()
+    name = clean_text(payload.get("name"), 80)
+    if not name:
+        raise ValueError("agent name is required")
+    if any(agent.get("name", "").lower() == name.lower() for agent in data["agents"]):
+        raise ValueError("agent already exists")
+    token = clean_text(payload.get("token"), 512) or uuid.uuid4().hex
+    agent = {
+        "id": unique_agent_id(name, data["agents"], payload.get("id")),
+        "name": name,
+        "token": token,
+        "created": str(datetime.now().date()),
+    }
+    data["agents"].append(agent)
+    save_agents(data)
+    return agent
+
+
+def verify_agent(name: object, token: object) -> dict | None:
+    clean_name = clean_text(name, 80)
+    clean_token = clean_text(token, 512)
+    if not clean_name or not clean_token:
+        return None
+    for agent in load_agents()["agents"]:
+        if agent.get("name") == clean_name and hmac.compare_digest(str(agent.get("token", "")), clean_token):
+            return {"id": agent["id"], "name": agent["name"]}
+    return None
+
+
+def jwt_secret() -> bytes:
+    secret = os.environ.get("LLM_TODO_JWT_SECRET", "").strip() or AUTH_TOKEN or "llm-todo-local-secret"
+    return secret.encode("utf-8")
+
+
+def b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+
+
+def b64url_decode(data: str) -> bytes:
+    return base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
+
+
+def sign_agent_jwt(message: str) -> str:
+    return b64url_encode(hmac.new(jwt_secret(), message.encode("utf-8"), hashlib.sha256).digest())
+
+
+def create_agent_session(agent: dict) -> str:
+    header = b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode("utf-8"))
+    payload = b64url_encode(
+        json.dumps(
+            {"sub": agent["id"], "name": agent["name"], "iat": int(time.time()), "jti": uuid.uuid4().hex},
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    )
+    message = f"{header}.{payload}"
+    jwt = f"{message}.{sign_agent_jwt(message)}"
+    data = load_agents()
+    data["sessions"][jwt] = {"agentId": agent["id"], "created": datetime.now().isoformat(timespec="seconds")}
+    save_agents(data)
+    return jwt
+
+
+def verify_agent_jwt(jwt: str) -> dict | None:
+    parts = jwt.split(".")
+    if len(parts) != 3:
+        return None
+    message = ".".join(parts[:2])
+    if not hmac.compare_digest(sign_agent_jwt(message), parts[2]):
+        return None
+    data = load_agents()
+    session = data["sessions"].get(jwt)
+    if not isinstance(session, dict):
+        return None
+    try:
+        payload = json.loads(b64url_decode(parts[1]).decode("utf-8"))
+    except (ValueError, json.JSONDecodeError):
+        return None
+    agent_id = str(payload.get("sub", ""))
+    if session.get("agentId") != agent_id:
+        return None
+    for agent in data["agents"]:
+        if agent.get("id") == agent_id:
+            return {"id": agent["id"], "name": agent["name"]}
+    return None
+
+
+def delete_agent_account(name: str) -> dict | None:
+    data = load_agents()
+    removed = None
+    remaining = []
+    for agent in data["agents"]:
+        if agent.get("name") == name:
+            removed = agent
+        else:
+            remaining.append(agent)
+    if not removed:
+        return None
+    data["agents"] = remaining
+    data["sessions"] = {jwt: session for jwt, session in data["sessions"].items() if session.get("agentId") != removed["id"]}
+    save_agents(data)
+    return removed
 
 
 def roadmap_payload() -> dict:
@@ -526,7 +699,8 @@ def update_capability(domain_id: str, payload: dict) -> dict | None:
 
 
 def update_agent_status(agent_id: str, payload: dict) -> dict | None:
-    data = agents_payload()
+    data = read_json_object(AGENTS_PATH, {"agents": []})
+    data["agents"] = [agent for agent in data.get("agents", []) if isinstance(agent, dict) and "token" not in agent]
     incoming = payload.get("agent") if isinstance(payload.get("agent"), dict) else payload
     if not isinstance(incoming, dict):
         incoming = {}
@@ -761,6 +935,7 @@ def create_task_from_message(message: str) -> dict:
         "horizon": horizon,
         "area": infer_area(message),
         "priority": infer_priority(message),
+        "subStatus": "pending",
         "tags": extract_tags(message),
         "due": today if horizon == "today" else "",
         "nextAction": "明确下一步动作" if len(title) < 12 else title,
@@ -1092,6 +1267,7 @@ def apply_operations(operations: list[dict]) -> list[dict]:
                 "horizon": op.get("horizon") if op.get("horizon") in HORIZON_ORDER else "week",
                 "area": normalize_area(op.get("area"), "life"),
                 "priority": op.get("priority") if op.get("priority") in {"high", "medium", "low"} else "medium",
+                "subStatus": normalize_sub_status(op.get("subStatus")),
                 "tags": normalize_tags(op.get("tags")),
                 "due": str(op.get("due", ""))[:20],
                 "nextAction": str(op.get("nextAction", ""))[:220],
@@ -1323,6 +1499,7 @@ def task_from_payload(payload: dict) -> dict:
         "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped"} else "active",
         "type": normalize_task_type(payload.get("type")),
         "assignee": clean_text(payload.get("assignee"), 80),
+        "subStatus": normalize_sub_status(payload.get("subStatus")),
         "horizon": payload.get("horizon") if payload.get("horizon") in HORIZON_ORDER else infer_horizon(raw_title),
         "area": normalize_area(payload.get("area"), infer_area(raw_title)),
         "priority": payload.get("priority") if payload.get("priority") in {"high", "medium", "low"} else infer_priority(title),
@@ -1379,6 +1556,8 @@ def update_task(payload: dict) -> dict:
         updated["type"] = payload["type"]
     if "assignee" in payload:
         updated["assignee"] = "" if payload.get("assignee") is None else str(payload.get("assignee"))
+    if payload.get("subStatus") in TASK_SUB_STATUSES:
+        updated["subStatus"] = payload["subStatus"]
     if payload.get("horizon") in HORIZON_ORDER:
         updated["horizon"] = payload["horizon"]
     if payload.get("priority") in {"high", "medium", "low"}:
@@ -1400,6 +1579,33 @@ def update_task(payload: dict) -> dict:
             save_tasks(tasks)
     append_log(f"更新任务：{updated['title']} → {updated['status']}")
     return {"task": updated, "state": state_payload()}
+
+
+def tasks_for_agent(agent_info: dict) -> list[dict]:
+    name = str(agent_info.get("name", ""))
+    return sorted_tasks([task for task in load_tasks() if task.get("assignee") == name])
+
+
+def update_agent_task_sub_status(task_id: str, agent_info: dict, payload: dict) -> tuple[dict, int]:
+    sub_status = normalize_sub_status(payload.get("subStatus"))
+    if payload.get("subStatus") not in TASK_SUB_STATUSES:
+        return {"error": "invalid subStatus"}, 400
+    tasks = load_tasks()
+    today = str(datetime.now().date())
+    found = None
+    for task in tasks:
+        if task.get("id") == task_id:
+            found = task
+            break
+    if not found:
+        return {"error": "task not found"}, 404
+    if found.get("assignee") != agent_info.get("name"):
+        return {"error": "forbidden"}, 403
+    found["subStatus"] = sub_status
+    found["updated"] = today
+    save_tasks(tasks)
+    append_log(f"Agent 更新任务子状态：{found['title']} → {sub_status}")
+    return {"task": found, "tasks": tasks_for_agent(agent_info)}, 200
 
 
 def filter_values(payload: dict, key: str) -> set[str]:
@@ -2382,10 +2588,23 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def authorized(self, path: str) -> bool:
-        if not path.startswith("/api/") or not AUTH_TOKEN:
+        self.agent_info = None
+        self.is_admin = False
+        if not path.startswith("/api/"):
             return True
-        expected = f"Bearer {AUTH_TOKEN}"
-        if self.headers.get("Authorization", "") == expected:
+        if path == "/api/auth/login":
+            return True
+        auth_header = self.headers.get("Authorization", "")
+        expected = f"Bearer {AUTH_TOKEN}" if AUTH_TOKEN else ""
+        if expected and auth_header == expected:
+            self.is_admin = True
+            return True
+        if auth_header.startswith("Bearer "):
+            agent = verify_agent_jwt(auth_header[7:].strip())
+            if agent:
+                self.agent_info = agent
+                return True
+        if not AUTH_TOKEN:
             return True
         self.send_response(401)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -2394,6 +2613,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+        return False
+
+    def require_admin(self) -> bool:
+        if self.is_admin:
+            return True
+        self.send_json({"error": "admin authorization required"}, 403)
+        return False
+
+    def require_agent(self) -> bool:
+        if self.agent_info:
+            return True
+        self.send_json({"error": "agent authorization required"}, 403)
         return False
 
     def read_json_body(self) -> dict:
@@ -2417,6 +2648,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(stats())
             elif path == "/api/tasks":
                 self.send_json({"tasks": sorted_tasks(load_tasks())})
+            elif path == "/api/tasks/mine":
+                if not self.require_agent():
+                    return
+                self.send_json({"agent": self.agent_info, "tasks": tasks_for_agent(self.agent_info)})
             elif path == "/api/history":
                 self.send_json({"tasks": sorted_history(load_history())})
             elif path == "/api/reminders":
@@ -2445,6 +2680,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"domain": domain} if domain else {"error": "capability not found"}, 200 if domain else 404)
             elif path == "/api/agents-status":
                 self.send_json(agents_payload())
+            elif path == "/api/agents":
+                if not self.require_admin():
+                    return
+                self.send_json({"agents": load_agents()["agents"]})
             elif path == "/api/roadmap":
                 self.send_json(roadmap_payload())
             else:
@@ -2460,7 +2699,13 @@ class Handler(BaseHTTPRequestHandler):
         size = int(self.headers.get("Content-Length", "0") or "0")
         try:
             payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
-            if path == "/api/chat":
+            if path == "/api/auth/login":
+                agent = verify_agent(payload.get("name"), payload.get("token"))
+                if not agent:
+                    self.send_json({"error": "invalid agent credentials"}, 401)
+                    return
+                self.send_json({"jwt": create_agent_session(agent), "agent": agent})
+            elif path == "/api/chat":
                 self.send_json(dispatch_chat(payload))
             elif path == "/api/chat/stream":
                 self.send_sse_stream(dispatch_stream_chat(payload))
@@ -2472,6 +2717,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(search_tasks(payload))
             elif path == "/api/tasks/batch":
                 self.send_json(batch_tasks(payload))
+            elif path == "/api/agents":
+                if not self.require_admin():
+                    return
+                try:
+                    agent = create_agent_account(payload)
+                except ValueError as exc:
+                    self.send_json({"error": str(exc)}, 400)
+                    return
+                self.send_json({"agent": agent, "agents": load_agents()["agents"]}, 201)
             elif path == "/api/undo":
                 self.send_json(undo_last_change())
             elif path == "/api/review/save":
@@ -2505,6 +2759,49 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(result if result else {"error": "skill not found"}, 200 if result else 404)
             elif path == "/api/roadmap":
                 self.send_json(update_roadmap(payload))
+            else:
+                self.send_error(404)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, 500)
+
+    def do_PATCH(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        path = strip_base_path(parsed.path)
+        if not self.authorized(path):
+            return
+        try:
+            payload = self.read_json_body()
+            task_match = re.fullmatch(r"/api/tasks/([^/]+)", path)
+            if task_match:
+                if not self.require_agent():
+                    return
+                task_id = urllib.parse.unquote(task_match.group(1))
+                result, status = update_agent_task_sub_status(task_id, self.agent_info, payload)
+                self.send_json(result, status)
+            else:
+                self.send_error(404)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, 500)
+
+    def do_DELETE(self) -> None:
+        parsed = urllib.parse.urlparse(self.path)
+        path = strip_base_path(parsed.path)
+        if not self.authorized(path):
+            return
+        try:
+            agent_match = re.fullmatch(r"/api/agents/([^/]+)", path)
+            if agent_match:
+                if not self.require_admin():
+                    return
+                agent_name = urllib.parse.unquote(agent_match.group(1))
+                data = load_agents()
+                before = len(data["agents"])
+                data["agents"] = [a for a in data["agents"] if a.get("name") != agent_name]
+                if len(data["agents"]) == before:
+                    self.send_json({"error": "agent not found"}, 404)
+                    return
+                save_agents(data)
+                self.send_json({"deleted": agent_name, "agents": load_agents()["agents"]})
             else:
                 self.send_error(404)
         except Exception as exc:
