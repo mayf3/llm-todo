@@ -34,9 +34,19 @@ ROADMAP_PATH = DATA / "roadmap.json"
 SKILL_TREE_PATH = DATA / "skill_tree.json"
 BACKUP_DIR = DATA / "backups"
 
+BASE_PATH = os.environ.get("LLM_TODO_BASE_PATH", "").rstrip("/")
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
 AGENT_CHAT_BASE_URL = os.environ.get("AGENT_CHAT_BASE_URL", "").rstrip("/")
 AUTH_TOKEN = os.environ.get("LLM_TODO_TOKEN", "").strip()
+
+# LLM Provider 配置
+OPENAI_COMPAT_API_KEY = os.environ.get("OPENAI_COMPAT_API_KEY", os.environ.get("DEEPSEEK_API_KEY", ""))
+OPENAI_COMPAT_BASE_URL = os.environ.get("OPENAI_COMPAT_BASE_URL", "https://api.deepseek.com/v1")
+OPENAI_COMPAT_MODEL = os.environ.get("OPENAI_COMPAT_MODEL", "deepseek-chat")
+
+GLM_API_KEY = os.environ.get("GLM_API_KEY", "73a397915e3646f9ab9d9ed7cfd04611.CXQiVkPOEqkuTe1G")
+GLM_BASE_URL = os.environ.get("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
+GLM_MODEL = os.environ.get("GLM_MODEL", "glm-4-flash")
 
 CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -53,6 +63,7 @@ REPEAT_OPTIONS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
 CURRENT_STATUSES = {"active", "waiting"}
 ARCHIVE_STATUSES = {"done", "dropped"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
+TASK_TYPES = {"personal", "agent", "review", "discuss"}
 DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
@@ -224,6 +235,11 @@ def normalize_repeat(value: object) -> str:
     return repeat if repeat in REPEAT_OPTIONS else ""
 
 
+def normalize_task_type(value: object) -> str:
+    task_type = str(value if value is not None else "").strip().lower()
+    return task_type if task_type in TASK_TYPES else "personal"
+
+
 def parse_iso_date(value: object) -> date | None:
     text = str(value if value is not None else "").strip()[:10]
     if not text:
@@ -292,6 +308,8 @@ def normalize_task(task: dict, default_status: str = "active") -> dict:
         "id": clean_text(task.get("id"), 80, new_task_id()),
         "title": clean_text(task.get("title"), 160, "未命名任务"),
         "status": status,
+        "type": normalize_task_type(task.get("type")),
+        "assignee": clean_text(task.get("assignee"), 80),
         "horizon": horizon,
         "area": normalize_area(task.get("area"), "life"),
         "priority": priority,
@@ -435,6 +453,22 @@ def providers() -> list[dict]:
             "configured": bool(os.environ.get("OPENAI_API_KEY")),
             "model": DEFAULT_MODEL,
             "notes": "使用 OPENAI_API_KEY 和 LLM_TODO_MODEL。",
+        },
+        {
+            "id": "openai-compat",
+            "name": "OpenAI 兼容 (DeepSeek)",
+            "configured": bool(OPENAI_COMPAT_API_KEY),
+            "model": OPENAI_COMPAT_MODEL,
+            "notes": f"使用 OPENAI_COMPAT_BASE_URL，默认 {OPENAI_COMPAT_MODEL}。",
+            "streaming": True,
+        },
+        {
+            "id": "glm",
+            "name": "GLM (智谱清言)",
+            "configured": bool(GLM_API_KEY),
+            "model": GLM_MODEL,
+            "notes": f"使用智谱 API，模型 {GLM_MODEL}。",
+            "streaming": True,
         },
         {
             "id": "agent-chat",
@@ -899,6 +933,100 @@ def agent_chat_forward(payload: dict) -> dict:
     }
 
 
+def openai_compat_chat(payload: dict) -> dict:
+    """OpenAI 兼容接口（支持 DeepSeek 等第三方 Provider）"""
+    if not OPENAI_COMPAT_API_KEY:
+        raise RuntimeError("OPENAI_COMPAT_API_KEY 未配置")
+
+    messages = payload.get("messages") or []
+    package = context_package(messages)
+    system_msg = package["system"]
+    user_msgs = messages[-16:]
+
+    api_messages = [{"role": "system", "content": system_msg}]
+    for msg in user_msgs:
+        role = msg.get("role", "user")
+        if role in ("user", "assistant"):
+            api_messages.append({"role": role, "content": str(msg.get("content", ""))})
+
+    data = json.dumps({
+        "model": OPENAI_COMPAT_MODEL,
+        "messages": api_messages,
+        "temperature": 0.7,
+        "max_tokens": 2048,
+    }, ensure_ascii=False).encode("utf-8")
+
+    request = urllib.request.Request(
+        f"{OPENAI_COMPAT_BASE_URL}/chat/completions",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {OPENAI_COMPAT_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+
+    text = ""
+    choices = raw.get("choices", [])
+    if choices:
+        text = choices[0].get("message", {}).get("content", "").strip()
+
+    result = apply_model_json(text)
+    result["provider"] = "openai-compat"
+    result["model"] = OPENAI_COMPAT_MODEL
+    result["rawText"] = text
+    return result
+
+
+def glm_chat(payload: dict) -> dict:
+    """GLM (智谱清言) 聊天接口"""
+    if not GLM_API_KEY:
+        raise RuntimeError("GLM_API_KEY 未配置")
+
+    messages = payload.get("messages") or []
+    package = context_package(messages)
+    system_msg = package["system"]
+    user_msgs = messages[-16:]
+
+    api_messages = [{"role": "system", "content": system_msg}]
+    for msg in user_msgs:
+        role = msg.get("role", "user")
+        if role in ("user", "assistant"):
+            api_messages.append({"role": role, "content": str(msg.get("content", ""))})
+
+    data = json.dumps({
+        "model": GLM_MODEL,
+        "messages": api_messages,
+        "temperature": 0.7,
+        "max_tokens": 2048,
+    }, ensure_ascii=False).encode("utf-8")
+
+    request = urllib.request.Request(
+        f"{GLM_BASE_URL}/chat/completions",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {GLM_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        raw = json.loads(response.read().decode("utf-8"))
+
+    text = ""
+    choices = raw.get("choices", [])
+    if choices:
+        text = choices[0].get("message", {}).get("content", "").strip()
+
+    result = apply_model_json(text)
+    result["provider"] = "glm"
+    result["model"] = GLM_MODEL
+    result["rawText"] = text
+    return result
+
+
 def agent_chat_stream_request(data: bytes) -> dict:
     request = urllib.request.Request(
         f"{AGENT_CHAT_BASE_URL}/api/chat/stream",
@@ -1007,6 +1135,10 @@ def dispatch_chat(payload: dict) -> dict:
     start = time.time()
     if provider == "openai-responses":
         result = openai_chat(payload)
+    elif provider == "openai-compat":
+        result = openai_compat_chat(payload)
+    elif provider == "glm":
+        result = glm_chat(payload)
     elif provider == "agent-chat":
         result = agent_chat_forward(payload)
     else:
@@ -1014,6 +1146,171 @@ def dispatch_chat(payload: dict) -> dict:
     result["latencyMs"] = round((time.time() - start) * 1000)
     result["state"] = state_payload()
     return result
+
+
+def build_api_messages(payload: dict) -> list[dict]:
+    """构建发送给 LLM 的 messages 数组"""
+    messages = payload.get("messages") or []
+    package = context_package(messages)
+    system_msg = package["system"]
+    user_msgs = messages[-16:]
+    api_messages = [{"role": "system", "content": system_msg}]
+    for msg in user_msgs:
+        role = msg.get("role", "user")
+        if role in ("user", "assistant"):
+            api_messages.append({"role": role, "content": str(msg.get("content", ""))})
+    return api_messages
+
+
+def stream_openai_compat(payload: dict):
+    """流式调用 OpenAI 兼容接口，yield SSE 格式的 chunk"""
+    if not OPENAI_COMPAT_API_KEY:
+        yield f"data: {json.dumps({'error': 'OPENAI_COMPAT_API_KEY 未配置'}, ensure_ascii=False)}\n\n"
+        return
+
+    api_messages = build_api_messages(payload)
+    data = json.dumps({
+        "model": OPENAI_COMPAT_MODEL,
+        "messages": api_messages,
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "stream": True,
+    }, ensure_ascii=False).encode("utf-8")
+
+    request = urllib.request.Request(
+        f"{OPENAI_COMPAT_BASE_URL}/chat/completions",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {OPENAI_COMPAT_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    full_text = ""
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            buffer = ""
+            while True:
+                chunk = response.read(4096)
+                if not chunk:
+                    break
+                buffer += chunk.decode("utf-8", errors="replace")
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if not line or not line.startswith("data: "):
+                        continue
+                    payload_str = line[6:]
+                    if payload_str.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk_data = json.loads(payload_str)
+                        delta = chunk_data.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            full_text += content
+                            yield f"data: {json.dumps({'content': content}, ensure_ascii=False)}\n\n"
+                    except json.JSONDecodeError:
+                        continue
+    except Exception as exc:
+        yield f"data: {json.dumps({'error': str(exc)}, ensure_ascii=False)}\n\n"
+        return
+
+    # 流结束，发送最终状态
+    result = apply_model_json(full_text)
+    operations = result.get("operations", [])
+    result_state = state_payload()
+    yield f"data: {json.dumps({'done': True, 'text': full_text, 'operations': operations, 'provider': 'openai-compat', 'model': OPENAI_COMPAT_MODEL, 'state': result_state}, ensure_ascii=False)}\n\n"
+
+
+def stream_glm(payload: dict):
+    """流式调用 GLM 接口，yield SSE 格式的 chunk"""
+    if not GLM_API_KEY:
+        yield f"data: {json.dumps({'error': 'GLM_API_KEY 未配置'}, ensure_ascii=False)}\n\n"
+        return
+
+    api_messages = build_api_messages(payload)
+    data = json.dumps({
+        "model": GLM_MODEL,
+        "messages": api_messages,
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "stream": True,
+    }, ensure_ascii=False).encode("utf-8")
+
+    request = urllib.request.Request(
+        f"{GLM_BASE_URL}/chat/completions",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {GLM_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    full_text = ""
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            buffer = ""
+            while True:
+                chunk = response.read(4096)
+                if not chunk:
+                    break
+                buffer += chunk.decode("utf-8", errors="replace")
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if not line or not line.startswith("data: "):
+                        continue
+                    payload_str = line[6:]
+                    if payload_str.strip() == "[DONE]":
+                        break
+                    try:
+                        chunk_data = json.loads(payload_str)
+                        delta = chunk_data.get("choices", [{}])[0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            full_text += content
+                            yield f"data: {json.dumps({'content': content}, ensure_ascii=False)}\n\n"
+                    except json.JSONDecodeError:
+                        continue
+    except Exception as exc:
+        yield f"data: {json.dumps({'error': str(exc)}, ensure_ascii=False)}\n\n"
+        return
+
+    result = apply_model_json(full_text)
+    operations = result.get("operations", [])
+    result_state = state_payload()
+    yield f"data: {json.dumps({'done': True, 'text': full_text, 'operations': operations, 'provider': 'glm', 'model': GLM_MODEL, 'state': result_state}, ensure_ascii=False)}\n\n"
+
+
+def dispatch_stream_chat(payload: dict):
+    """根据 provider 选择流式生成器"""
+    provider = str(payload.get("provider") or "local-planner")
+    if provider == "openai-compat":
+        return stream_openai_compat(payload)
+    elif provider == "glm":
+        return stream_glm(payload)
+    else:
+        # 非 streaming provider 回退到同步方式
+        return stream_fallback(payload)
+
+
+def stream_fallback(payload: dict):
+    """同步 provider 的模拟流式输出（一次性发送全部内容）"""
+    start = time.time()
+    result = dispatch_chat(payload)
+    latency = round((time.time() - start) * 1000)
+    text = result.get("text", "")
+
+    # 模拟按字符流式输出
+    chunk_size = max(1, len(text) // 20)
+    for i in range(0, len(text), chunk_size):
+        chunk = text[i:i + chunk_size]
+        yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+
+    yield f"data: {json.dumps({'done': True, 'text': text, 'operations': result.get('operations', []), 'provider': result.get('provider', 'local-planner'), 'model': result.get('model', ''), 'latencyMs': latency, 'state': result.get('state', state_payload())}, ensure_ascii=False)}\n\n"
 
 
 def task_from_payload(payload: dict) -> dict:
@@ -1024,6 +1321,8 @@ def task_from_payload(payload: dict) -> dict:
         "id": new_task_id(),
         "title": title,
         "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped"} else "active",
+        "type": normalize_task_type(payload.get("type")),
+        "assignee": clean_text(payload.get("assignee"), 80),
         "horizon": payload.get("horizon") if payload.get("horizon") in HORIZON_ORDER else infer_horizon(raw_title),
         "area": normalize_area(payload.get("area"), infer_area(raw_title)),
         "priority": payload.get("priority") if payload.get("priority") in {"high", "medium", "low"} else infer_priority(title),
@@ -1076,6 +1375,10 @@ def update_task(payload: dict) -> dict:
         updated["tags"] = normalize_tags(payload.get("tags"))
     if payload.get("status") in TASK_STATUSES:
         updated["status"] = payload["status"]
+    if payload.get("type") in TASK_TYPES:
+        updated["type"] = payload["type"]
+    if "assignee" in payload:
+        updated["assignee"] = "" if payload.get("assignee") is None else str(payload.get("assignee"))
     if payload.get("horizon") in HORIZON_ORDER:
         updated["horizon"] = payload["horizon"]
     if payload.get("priority") in {"high", "medium", "low"}:
@@ -1110,6 +1413,8 @@ def filter_values(payload: dict, key: str) -> set[str]:
 def search_tasks(payload: dict) -> dict:
     query = str(payload.get("query", "")).strip().lower()
     status_filter = filter_values(payload, "status")
+    type_filter = filter_values(payload, "type")
+    assignee_filter = filter_values(payload, "assignee")
     horizon_filter = filter_values(payload, "horizon")
     area_filter = filter_values(payload, "area")
     priority_filter = filter_values(payload, "priority")
@@ -1121,6 +1426,10 @@ def search_tasks(payload: dict) -> dict:
         if query and query not in task.get("title", "").lower():
             continue
         if status_filter and task.get("status", "").lower() not in status_filter:
+            continue
+        if type_filter and task.get("type", "personal").lower() not in type_filter:
+            continue
+        if assignee_filter and task.get("assignee", "").lower() not in assignee_filter:
             continue
         if horizon_filter and task.get("horizon", "").lower() not in horizon_filter:
             continue
@@ -2007,6 +2316,13 @@ def safe_web_path(path: str) -> Path:
     return target
 
 
+def strip_base_path(path: str) -> str:
+    """Remove BASE_PATH prefix from request path."""
+    if BASE_PATH and path.startswith(BASE_PATH):
+        return path[len(BASE_PATH):] or "/"
+    return path
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "LLMTodo/0.1"
 
@@ -2021,11 +2337,44 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def send_sse_stream(self, generator):
+        """发送 SSE 流式响应"""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        try:
+            for chunk in generator:
+                if isinstance(chunk, str):
+                    self.wfile.write(chunk.encode("utf-8"))
+                else:
+                    self.wfile.write(chunk)
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        # SSE 结束标记
+        try:
+            self.wfile.write(b"data: [DONE]\n\n")
+            self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def send_file(self, path: Path) -> None:
         if not path.exists() or not path.is_file():
             self.send_error(404)
             return
         data = path.read_bytes()
+        # Inject <base> tag into HTML files when BASE_PATH is set
+        if BASE_PATH and path.suffix == ".html":
+            html = data.decode("utf-8", errors="replace")
+            base_tag = f'<base href="{BASE_PATH}/">'
+            if "<head>" in html:
+                html = html.replace("<head>", f"<head>{base_tag}", 1)
+            else:
+                html = base_tag + html
+            data = html.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", CONTENT_TYPES.get(path.suffix, "application/octet-stream"))
         self.send_header("Content-Length", str(len(data)))
@@ -2054,74 +2403,78 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
-        if not self.authorized(parsed.path):
+        path = strip_base_path(parsed.path)
+        if not self.authorized(path):
             return
         query = urllib.parse.parse_qs(parsed.query)
-        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", parsed.path)
+        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", path)
         try:
-            if parsed.path == "/api/health":
+            if path == "/api/health":
                 self.send_json({"ok": True, "root": str(ROOT), "stats": stats()})
-            elif parsed.path == "/api/state":
+            elif path == "/api/state":
                 self.send_json(state_payload())
-            elif parsed.path == "/api/stats":
+            elif path == "/api/stats":
                 self.send_json(stats())
-            elif parsed.path == "/api/tasks":
+            elif path == "/api/tasks":
                 self.send_json({"tasks": sorted_tasks(load_tasks())})
-            elif parsed.path == "/api/history":
+            elif path == "/api/history":
                 self.send_json({"tasks": sorted_history(load_history())})
-            elif parsed.path == "/api/reminders":
+            elif path == "/api/reminders":
                 self.send_json(reminders_payload())
-            elif parsed.path == "/api/character":
+            elif path == "/api/character":
                 self.send_json(character_payload())
-            elif parsed.path == "/api/skill-tree":
+            elif path == "/api/skill-tree":
                 self.send_json(skill_tree_payload())
-            elif parsed.path == "/api/docs":
+            elif path == "/api/docs":
                 self.send_json({"docs": doc_records()})
-            elif parsed.path == "/api/doc":
+            elif path == "/api/doc":
                 target = safe_project_path(query.get("path", [""])[0])
                 frontmatter, body = split_frontmatter(read_text(target))
                 self.send_json({"path": rel(target), "frontmatter": frontmatter, "markdown": body})
-            elif parsed.path == "/api/design":
+            elif path == "/api/design":
                 self.send_json(design_payload())
-            elif parsed.path == "/api/review":
+            elif path == "/api/review":
                 self.send_json(review_payload())
-            elif parsed.path == "/api/reviews":
+            elif path == "/api/reviews":
                 self.send_json(review_history())
-            elif parsed.path == "/api/capabilities":
+            elif path == "/api/capabilities":
                 self.send_json(capabilities_payload())
             elif capability_match:
                 domain_id = urllib.parse.unquote(capability_match.group(1))
                 domain = find_by_id(capabilities_payload()["domains"], domain_id)
                 self.send_json({"domain": domain} if domain else {"error": "capability not found"}, 200 if domain else 404)
-            elif parsed.path == "/api/agents-status":
+            elif path == "/api/agents-status":
                 self.send_json(agents_payload())
-            elif parsed.path == "/api/roadmap":
+            elif path == "/api/roadmap":
                 self.send_json(roadmap_payload())
             else:
-                self.send_file(safe_web_path(parsed.path))
+                self.send_file(safe_web_path(path))
         except Exception as exc:
             self.send_json({"error": str(exc)}, 500)
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
-        if not self.authorized(parsed.path):
+        path = strip_base_path(parsed.path)
+        if not self.authorized(path):
             return
         size = int(self.headers.get("Content-Length", "0") or "0")
         try:
             payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
-            if parsed.path == "/api/chat":
+            if path == "/api/chat":
                 self.send_json(dispatch_chat(payload))
-            elif parsed.path == "/api/tasks/create":
+            elif path == "/api/chat/stream":
+                self.send_sse_stream(dispatch_stream_chat(payload))
+            elif path == "/api/tasks/create":
                 self.send_json(create_task(payload))
-            elif parsed.path == "/api/tasks/update":
+            elif path == "/api/tasks/update":
                 self.send_json(update_task(payload))
-            elif parsed.path == "/api/tasks/search":
+            elif path == "/api/tasks/search":
                 self.send_json(search_tasks(payload))
-            elif parsed.path == "/api/tasks/batch":
+            elif path == "/api/tasks/batch":
                 self.send_json(batch_tasks(payload))
-            elif parsed.path == "/api/undo":
+            elif path == "/api/undo":
                 self.send_json(undo_last_change())
-            elif parsed.path == "/api/review/save":
+            elif path == "/api/review/save":
                 self.send_json(save_review(payload))
             else:
                 self.send_error(404)
@@ -2130,11 +2483,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_PUT(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
-        if not self.authorized(parsed.path):
+        path = strip_base_path(parsed.path)
+        if not self.authorized(path):
             return
-        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", parsed.path)
-        agent_match = re.fullmatch(r"/api/agents-status/([^/]+)", parsed.path)
-        skill_match = re.fullmatch(r"/api/skill-tree/([^/]+)", parsed.path)
+        capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", path)
+        agent_match = re.fullmatch(r"/api/agents-status/([^/]+)", path)
+        skill_match = re.fullmatch(r"/api/skill-tree/([^/]+)", path)
         try:
             payload = self.read_json_body()
             if capability_match:
@@ -2149,7 +2503,7 @@ class Handler(BaseHTTPRequestHandler):
                 skill_id = urllib.parse.unquote(skill_match.group(1))
                 result = update_skill_node(skill_id, payload)
                 self.send_json(result if result else {"error": "skill not found"}, 200 if result else 404)
-            elif parsed.path == "/api/roadmap":
+            elif path == "/api/roadmap":
                 self.send_json(update_roadmap(payload))
             else:
                 self.send_error(404)
