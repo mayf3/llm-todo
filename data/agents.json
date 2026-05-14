@@ -13,7 +13,8 @@
         "能力地图维护"
       ],
       "relatedDomain": "task-management",
-      "notes": "心跳30min，负责全局优先级和生态规划"
+      "notes": "心跳30min，负责全局优先级和生态规划",
+      "token": "0f4de5ae95b945508a1836890539a326"
     },
     {
       "id": "efficiency-agent",
@@ -28,7 +29,8 @@
         "Cron管理"
       ],
       "relatedDomain": "task-management",
-      "notes": "每日学习cron，LLM Todo主力维护者"
+      "notes": "每日学习cron，LLM Todo主力维护者",
+      "token": "a5f904f075f443238d7cc0c1dd85515e"
     },
     {
       "id": "blog-agent",
@@ -44,7 +46,8 @@
         "飞书文档创建"
       ],
       "relatedDomain": "writing",
-      "notes": "每日7:50自动写作 + 夜间审阅×8 + 学习cron，共10+个cron"
+      "notes": "每日7:50自动写作 + 夜间审阅×8 + 学习cron，共10+个cron",
+      "token": "ab12e3dc284f4de79f25d77b83303cbf"
     },
     {
       "id": "writing-style-analyst-agent",
@@ -59,7 +62,8 @@
         "风格反馈"
       ],
       "relatedDomain": "writing",
-      "notes": "在分析历史文章，持续学习写作风格"
+      "notes": "在分析历史文章，持续学习写作风格",
+      "token": "b3a672c61638474e9f72546bb3db37ee"
     },
     {
       "id": "creative-writer",
@@ -73,7 +77,8 @@
         "小说创作"
       ],
       "relatedDomain": "writing",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "4aec220dfc3945f9a1e7975cca99643f"
     },
     {
       "id": "article-publisher-agent",
@@ -89,7 +94,8 @@
         "Skill迭代"
       ],
       "relatedDomain": "publishing",
-      "notes": "夜间发布cron + 运营研究cron + 周Skill优化"
+      "notes": "夜间发布cron + 运营研究cron + 周Skill优化",
+      "token": "7c175d10a86f4592bef06068c544c36a"
     },
     {
       "id": "podcast-producer-agent",
@@ -105,7 +111,8 @@
         "小宇宙发布"
       ],
       "relatedDomain": "voice",
-      "notes": "有能力但播客流程未闭环"
+      "notes": "有能力但播客流程未闭环",
+      "token": "9a8080de0be749fda24721397d9a57a4"
     },
     {
       "id": "video-producer",
@@ -119,7 +126,8 @@
         "脚本写作"
       ],
       "relatedDomain": "video",
-      "notes": "有agent有工具（阿里Wan），但零产出"
+      "notes": "有agent有工具（阿里Wan），但零产出",
+      "token": "df50aaa603914c3ebc9f9121b900ba76"
     },
     {
       "id": "stock-agent",
@@ -134,7 +142,8 @@
         "量化数据管道"
       ],
       "relatedDomain": "stock",
-      "notes": "100只A股分析完成，量化Phase 1搭建中。每日推送已停，异常驱动模式未实现"
+      "notes": "100只A股分析完成，量化Phase 1搭建中。每日推送已停，异常驱动模式未实现",
+      "token": "ef401554a8704d1da7be3208c1eedebd"
     },
     {
       "id": "finance-agent",
@@ -148,7 +157,8 @@
         "数据记录"
       ],
       "relatedDomain": "stock",
-      "notes": "简单监控"
+      "notes": "简单监控",
+      "token": "24d290a95e2540b483a2567ac8aebb82"
     },
     {
       "id": "daily-thought-agent",
@@ -162,7 +172,8 @@
         "每日总结"
       ],
       "relatedDomain": "writing",
-      "notes": "每日22:00 cron"
+      "notes": "每日22:00 cron",
+      "token": "f79f8765edca4b53836d4eead92dc86b"
     },
     {
       "id": "research-agent",
@@ -177,7 +188,8 @@
         "报告生成"
       ],
       "relatedDomain": "research",
-      "notes": "按需使用，deep-research skill基础版完成"
+      "notes": "按需使用，deep-research skill基础版完成",
+      "token": "676b495c13254a1a8b1a2ce5aeeba037"
     },
     {
       "id": "knowledge-curator-agent",
@@ -191,7 +203,8 @@
         "信息整理"
       ],
       "relatedDomain": "research",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "ded8b734ef144faaacd613a3d45047f2"
     },
     {
       "id": "image-gen-agent",
@@ -206,7 +219,8 @@
         "阿里Wan图像"
       ],
       "relatedDomain": "image",
-      "notes": "三个渠道各自独立，未统一入口"
+      "notes": "三个渠道各自独立，未统一入口",
+      "token": "48cebcc97c3a421298457031505e4cc8"
     },
     {
       "id": "voice-tech-agent",
@@ -220,7 +234,8 @@
         "语音克隆"
       ],
       "relatedDomain": "voice",
-      "notes": "cron已禁用"
+      "notes": "cron已禁用",
+      "token": "635c746c3f124c46af11d0c03d90a494"
     },
     {
       "id": "lobster-agent",
@@ -234,7 +249,8 @@
         "每日报告"
       ],
       "relatedDomain": "task-management",
-      "notes": "每日13:00 cron"
+      "notes": "每日13:00 cron",
+      "token": "2fb22ce0c48b4cb5bf729f7f2d9a59c1"
     },
     {
       "id": "lobster-guide-agent",
@@ -247,7 +263,8 @@
         "新手引导"
       ],
       "relatedDomain": "task-management",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "c6de787d9f4b43e78cf552f1e4323a08"
     },
     {
       "id": "itops-agent",
@@ -261,7 +278,8 @@
         "系统管理"
       ],
       "relatedDomain": "ops",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "661a6145246b475e95c3396a8123ac1b"
     },
     {
       "id": "healthcheck-agent",
@@ -275,7 +293,8 @@
         "安全审计"
       ],
       "relatedDomain": "ops",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "68deb83fc1894a95a7dae803df72c571"
     },
     {
       "id": "security-agent",
@@ -289,7 +308,8 @@
         "漏洞检测"
       ],
       "relatedDomain": "ops",
-      "notes": "每日8:10 + 每小时cron"
+      "notes": "每日8:10 + 每小时cron",
+      "token": "d8a610040915437fb64966091f66f533"
     },
     {
       "id": "hr-agent",
@@ -303,7 +323,8 @@
         "招聘辅助"
       ],
       "relatedDomain": "management",
-      "notes": "每日0:30 cron"
+      "notes": "每日0:30 cron",
+      "token": "915cf6d55aaa48248bcf019b6eadc858"
     },
     {
       "id": "skill-engineer-agent",
@@ -317,7 +338,8 @@
         "技能研究"
       ],
       "relatedDomain": "development",
-      "notes": "每日13:20 + 10:20 cron"
+      "notes": "每日13:20 + 10:20 cron",
+      "token": "1b948138f2974dbdb50bd0cb866cd77b"
     },
     {
       "id": "discipline-coach-agent",
@@ -331,7 +353,8 @@
         "知识管理"
       ],
       "relatedDomain": "management",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "c4caf3e13542447dac7ece996356922c"
     },
     {
       "id": "education-agent",
@@ -345,7 +368,8 @@
         "每日灵感推送"
       ],
       "relatedDomain": "family",
-      "notes": "每日7:00 cron推送"
+      "notes": "每日7:00 cron推送",
+      "token": "3ade8467168a4853a1b2c6a14da798f1"
     },
     {
       "id": "psychology-agent",
@@ -359,7 +383,8 @@
         "论文辅助"
       ],
       "relatedDomain": "family",
-      "notes": "欢欢的心理学博士助手，cron已禁用"
+      "notes": "欢欢的心理学博士助手，cron已禁用",
+      "token": "3763554990ef4081892da63e04870e90"
     },
     {
       "id": "paper-reviewer-agent",
@@ -372,7 +397,8 @@
         "学术论文审稿"
       ],
       "relatedDomain": "family",
-      "notes": "欢欢用，cron已禁用"
+      "notes": "欢欢用，cron已禁用",
+      "token": "2dc36f254dfb4792b3433a3cdbc8e710"
     },
     {
       "id": "game-dev-agent",
@@ -385,7 +411,8 @@
         "儿童游戏开发"
       ],
       "relatedDomain": "family",
-      "notes": "cron已禁用，项目暂停"
+      "notes": "cron已禁用，项目暂停",
+      "token": "94ec6231fc7a41b29d9649139f4f3955"
     },
     {
       "id": "devtools-agent",
@@ -399,7 +426,8 @@
         "自动化脚本"
       ],
       "relatedDomain": "development",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "860f3714afaa4f39aecf33cb60a346c2"
     },
     {
       "id": "agent-dev-engineer",
@@ -413,7 +441,8 @@
         "架构设计"
       ],
       "relatedDomain": "development",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "fd7432259a3848389994f6a98f2f99b4"
     },
     {
       "id": "mobile-app-engineer",
@@ -427,7 +456,8 @@
         "移动应用"
       ],
       "relatedDomain": "development",
-      "notes": "使用glm-4.7模型"
+      "notes": "使用glm-4.7模型",
+      "token": "989895ed189941e18d574b67cbf52ca5"
     },
     {
       "id": "miniapp-game-engineer",
@@ -440,7 +470,8 @@
         "小程序开发"
       ],
       "relatedDomain": "development",
-      "notes": "使用glm-4.7模型"
+      "notes": "使用glm-4.7模型",
+      "token": "e70d9d73d99246329dd94b11cfcc17c1"
     },
     {
       "id": "email-manager-agent",
@@ -454,7 +485,8 @@
         "邮件处理"
       ],
       "relatedDomain": "management",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "aa6ad45e66044b4d89b4ee7ca09163e0"
     },
     {
       "id": "account-manager-agent",
@@ -469,7 +501,8 @@
         "2FA"
       ],
       "relatedDomain": "management",
-      "notes": "8平台账号已注册完成"
+      "notes": "8平台账号已注册完成",
+      "token": "cafc8be6ee124fbd9350534e63fbcf8f"
     },
     {
       "id": "shopping-list-agent",
@@ -483,7 +516,8 @@
         "日用品管理"
       ],
       "relatedDomain": "life",
-      "notes": "每日8:00 cron"
+      "notes": "每日8:00 cron",
+      "token": "eb7fe1aa8d0a48f88c7ac76508475f47"
     },
     {
       "id": "feishu-expert-agent",
@@ -496,7 +530,8 @@
         "飞书平台操作"
       ],
       "relatedDomain": "ops",
-      "notes": "按需使用，与飞书专家2可能合并"
+      "notes": "按需使用，与飞书专家2可能合并",
+      "token": "f570371bbf994ddb935d821b86a0695e"
     },
     {
       "id": "feishu-expert-2-agent",
@@ -509,7 +544,8 @@
         "飞书平台操作"
       ],
       "relatedDomain": "ops",
-      "notes": "按需使用，与飞书专家可能合并"
+      "notes": "按需使用，与飞书专家可能合并",
+      "token": "ca271d9340e7472e8fd0e339903916c4"
     },
     {
       "id": "travel-planner-agent",
@@ -523,7 +559,8 @@
         "行程推荐"
       ],
       "relatedDomain": "life",
-      "notes": "每日8:00 + 周四15:00推荐"
+      "notes": "每日8:00 + 周四15:00推荐",
+      "token": "71a91ae793444c24a1d66733e132caee"
     },
     {
       "id": "3d-print-agent",
@@ -536,7 +573,8 @@
         "2D/3D打印"
       ],
       "relatedDomain": "life",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "0df30ce2b8eb441b89d90f50b38985a1"
     },
     {
       "id": "family-doctor-2-agent",
@@ -550,7 +588,8 @@
         "医疗建议"
       ],
       "relatedDomain": "family",
-      "notes": "档案系统建好，按需使用"
+      "notes": "档案系统建好，按需使用",
+      "token": "326f1169a6874f33b89c6a87aa7655ff"
     },
     {
       "id": "reimbursement-expert",
@@ -564,7 +603,8 @@
         "财务辅助"
       ],
       "relatedDomain": "management",
-      "notes": "按需使用"
+      "notes": "按需使用",
+      "token": "fd99662ff6c0477899b1f9ad75fe44f8"
     },
     {
       "id": "biz-explorer",
@@ -578,7 +618,8 @@
         "变现路径探索"
       ],
       "relatedDomain": "business",
-      "notes": "每日2:00+2:30 cron推送想法，探索阶段"
+      "notes": "每日2:00+2:30 cron推送想法，探索阶段",
+      "token": "05a66c9e86324cceaa3d4c83038d380f"
     },
     {
       "id": "trend-tracker",
@@ -592,7 +633,8 @@
         "每日+每周推送"
       ],
       "relatedDomain": "research",
-      "notes": "每日14:00 + 周一10:00 cron，使用glm-4.7"
+      "notes": "每日14:00 + 周一10:00 cron，使用glm-4.7",
+      "token": "ad527c3d044d4c5b8305f19549a9d86e"
     },
     {
       "id": "soul-questioner-agent",
@@ -606,7 +648,286 @@
         "深度提问"
       ],
       "relatedDomain": "growth",
-      "notes": "每日8:30+21:00 cron"
+      "notes": "每日8:30+21:00 cron",
+      "token": "b98b6c76014449b69b0b169ef7a530da"
     }
-  ]
+  ],
+  "accounts": [
+    {
+      "id": "ceo-agent",
+      "name": "龙虾合伙人",
+      "token": "0f4de5ae95b945508a1836890539a326",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "efficiency-agent",
+      "name": "效率管家",
+      "token": "a5f904f075f443238d7cc0c1dd85515e",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "blog-agent",
+      "name": "博客写作",
+      "token": "ab12e3dc284f4de79f25d77b83303cbf",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "writing-style-analyst-agent",
+      "name": "文风分析师（笔探）",
+      "token": "b3a672c61638474e9f72546bb3db37ee",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "creative-writer",
+      "name": "文学创作",
+      "token": "4aec220dfc3945f9a1e7975cca99643f",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "article-publisher-agent",
+      "name": "文章发布管家",
+      "token": "7c175d10a86f4592bef06068c544c36a",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "podcast-producer-agent",
+      "name": "播客制作人",
+      "token": "9a8080de0be749fda24721397d9a57a4",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "video-producer",
+      "name": "视频制作人",
+      "token": "df50aaa603914c3ebc9f9121b900ba76",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "stock-agent",
+      "name": "股票分析师",
+      "token": "ef401554a8704d1da7be3208c1eedebd",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "finance-agent",
+      "name": "财务监控员",
+      "token": "24d290a95e2540b483a2567ac8aebb82",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "daily-thought-agent",
+      "name": "随想记录员",
+      "token": "f79f8765edca4b53836d4eead92dc86b",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "research-agent",
+      "name": "深度研究员",
+      "token": "676b495c13254a1a8b1a2ce5aeeba037",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "knowledge-curator-agent",
+      "name": "知识管家",
+      "token": "ded8b734ef144faaacd613a3d45047f2",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "image-gen-agent",
+      "name": "图像生成专家",
+      "token": "48cebcc97c3a421298457031505e4cc8",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "voice-tech-agent",
+      "name": "语音技术专家",
+      "token": "635c746c3f124c46af11d0c03d90a494",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "lobster-agent",
+      "name": "龙虾进化助手",
+      "token": "2fb22ce0c48b4cb5bf729f7f2d9a59c1",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "lobster-guide-agent",
+      "name": "龙虾新手指导员",
+      "token": "c6de787d9f4b43e78cf552f1e4323a08",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "itops-agent",
+      "name": "IT运维助手",
+      "token": "661a6145246b475e95c3396a8123ac1b",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "healthcheck-agent",
+      "name": "健康检查助手",
+      "token": "68deb83fc1894a95a7dae803df72c571",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "security-agent",
+      "name": "安全卫士",
+      "token": "d8a610040915437fb64966091f66f533",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "hr-agent",
+      "name": "HR助手",
+      "token": "915cf6d55aaa48248bcf019b6eadc858",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "skill-engineer-agent",
+      "name": "技能研究员",
+      "token": "1b948138f2974dbdb50bd0cb866cd77b",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "discipline-coach-agent",
+      "name": "工作规范教练",
+      "token": "c4caf3e13542447dac7ece996356922c",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "education-agent",
+      "name": "AI教育顾问（小花）",
+      "token": "3ade8467168a4853a1b2c6a14da798f1",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "psychology-agent",
+      "name": "心理学研究（小封）",
+      "token": "3763554990ef4081892da63e04870e90",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "paper-reviewer-agent",
+      "name": "论文审稿专家",
+      "token": "2dc36f254dfb4792b3433a3cdbc8e710",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "game-dev-agent",
+      "name": "游戏开发师（游戏侠）",
+      "token": "94ec6231fc7a41b29d9649139f4f3955",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "devtools-agent",
+      "name": "内部工具开发者",
+      "token": "860f3714afaa4f39aecf33cb60a346c2",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "agent-dev-engineer",
+      "name": "Agent研发工程师",
+      "token": "fd7432259a3848389994f6a98f2f99b4",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "mobile-app-engineer",
+      "name": "手机应用开发工程师",
+      "token": "989895ed189941e18d574b67cbf52ca5",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "miniapp-game-engineer",
+      "name": "小程序开发工程师",
+      "token": "e70d9d73d99246329dd94b11cfcc17c1",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "email-manager-agent",
+      "name": "邮箱管理专家",
+      "token": "aa6ad45e66044b4d89b4ee7ca09163e0",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "account-manager-agent",
+      "name": "账号管理专家",
+      "token": "cafc8be6ee124fbd9350534e63fbcf8f",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "shopping-list-agent",
+      "name": "购物清单管家",
+      "token": "eb7fe1aa8d0a48f88c7ac76508475f47",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "feishu-expert-agent",
+      "name": "飞书专家",
+      "token": "f570371bbf994ddb935d821b86a0695e",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "feishu-expert-2-agent",
+      "name": "飞书专家2",
+      "token": "ca271d9340e7472e8fd0e339903916c4",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "travel-planner-agent",
+      "name": "旅游规划师（小P）",
+      "token": "71a91ae793444c24a1d66733e132caee",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "3d-print-agent",
+      "name": "3D打印专家（打印侠）",
+      "token": "0df30ce2b8eb441b89d90f50b38985a1",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "family-doctor-2-agent",
+      "name": "家庭医生",
+      "token": "326f1169a6874f33b89c6a87aa7655ff",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "reimbursement-expert",
+      "name": "报销专家",
+      "token": "fd99662ff6c0477899b1f9ad75fe44f8",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "biz-explorer",
+      "name": "商业化探索",
+      "token": "05a66c9e86324cceaa3d4c83038d380f",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "trend-tracker",
+      "name": "前沿观察员",
+      "token": "ad527c3d044d4c5b8305f19549a9d86e",
+      "created": "2026-05-14"
+    },
+    {
+      "id": "soul-questioner-agent",
+      "name": "灵魂拷问师",
+      "token": "b98b6c76014449b69b0b169ef7a530da",
+      "created": "2026-05-14"
+    }
+  ],
+  "sessions": {
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODc1NzA0MiwianRpIjoiMDQ4ZDQ3MDc0ZDAyNDlkYzg2NWRlMGUyZGE1N2E1ODkifQ.qPbJu63xwsxm8jE0XoAoP1k6LxQcKBb6CSqvxmcVm1Y": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-14T19:10:42"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODc1NzE1NSwianRpIjoiNDRmNGY2OTQ4MmQ2NDVjZTgxNWQ3OWU0YTQwMjAzYTYifQ.C9vKywyp_1tsN28qychzaaqRZTi5OCuQgXUughelrVA": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-14T19:12:35"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpdG9wcy1hZ2VudCIsIm5hbWUiOiJJVOi_kOe7tOWKqeaJiyIsImlhdCI6MTc3ODc1NzQ4MSwianRpIjoiNzhlNTMyMmQ0ZDNiNGQ5MjkwOTgyZDU0ODY2ZTQ3ZWYifQ.8dqRyNZuKIwpVw2vgUimxgH1VSZ4zGITHHOUfohCifs": {
+      "agentId": "itops-agent",
+      "created": "2026-05-14T19:18:01"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdG9jay1hZ2VudCIsIm5hbWUiOiLogqHnpajliIbmnpDluIgiLCJpYXQiOjE3Nzg3NTc0ODEsImp0aSI6IjE3MzRlMjQwYjhlYjQwYzc4ZWRiMjE1Y2M2NmQxY2IwIn0._ndKbzpfhTX56AUrtNt0Q7X72A-86RNJyt9m3vWjvJA": {
+      "agentId": "stock-agent",
+      "created": "2026-05-14T19:18:01"
+    }
+  }
 }

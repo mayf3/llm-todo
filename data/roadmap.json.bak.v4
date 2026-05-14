@@ -1,0 +1,255 @@
+{
+  "milestones": [
+    {
+      "id": "m-week1-may",
+      "period": "本周",
+      "deadline": "2026-05-14",
+      "theme": "一个闭环：写作发布跑稳",
+      "items": [
+        {
+          "id": "m-week1-1",
+          "title": "写作→发布流程排障",
+          "currentStatus": "发布不稳定，经常需要人工干预",
+          "gap": "找到不稳定的根因，修复后连续3天零人工发布",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "writing",
+          "owner": "效率管家 + 博客写作专家"
+        },
+        {
+          "id": "m-week1-2",
+          "title": "KPI 仪表盘基线数据录入",
+          "currentStatus": "各平台粉丝数完全不知道",
+          "gap": "至少手动录入一次各平台粉丝数",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "ops",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-week1-3",
+          "title": "股票分析师恢复运行",
+          "currentStatus": "推送停了，原因不明",
+          "gap": "确认为什么停，恢复基本每日分析",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "stock",
+          "owner": "效率管家"
+        }
+      ]
+    },
+    {
+      "id": "m-may",
+      "period": "本月",
+      "deadline": "2026-06-04",
+      "theme": "两个闭环到 Lv.2+",
+      "items": [
+        {
+          "id": "m-may-1",
+          "title": "写作发布闭环到 Lv.3",
+          "currentStatus": "Lv.1 不稳定",
+          "gap": "连续2周零人工干预自动发布",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "writing",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-may-2",
+          "title": "股票异常驱动模式试跑",
+          "currentStatus": "未开始",
+          "gap": "设计异常规则，试跑1周，只推异常通知",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "stock",
+          "owner": "效率管家 + 股票分析师"
+        },
+        {
+          "id": "m-may-3",
+          "title": "技能树前端落地",
+          "currentStatus": "设计文档 v3 完成",
+          "gap": "后端数据模型 + 前端树形可视化",
+          "priority": "medium",
+          "progress": 0.15,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-may-4",
+          "title": "复盘两个闭环，总结可复制模式",
+          "currentStatus": "未开始",
+          "gap": "写一份闭环模式文档，供后续 agent 复制",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "龙虾合伙人"
+        }
+      ]
+    },
+    {
+      "id": "m-q2",
+      "period": "本季度",
+      "deadline": "2026-07-31",
+      "theme": "闭环复制 + 基础设施",
+      "items": [
+        {
+          "id": "m-q2-1",
+          "title": "LLM Todo 上云部署",
+          "currentStatus": "本地可用",
+          "gap": "买服务器 + 部署 + 多端访问",
+          "priority": "high",
+          "progress": 0.05,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-2",
+          "title": "闭环经验复制到播客",
+          "currentStatus": "播客 Lv.0",
+          "gap": "利用写作闭环经验，建立播客选题→脚本→录制流程",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "voice",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-3",
+          "title": "KPI 面板自动化采集",
+          "currentStatus": "手动录入",
+          "gap": "cron 定时抓取各平台粉丝/阅读量",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "ops",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-4",
+          "title": "时间投资回报率数据结构",
+          "currentStatus": "未开始",
+          "gap": "设计时间投入 vs 产出的跟踪方式",
+          "priority": "low",
+          "progress": 0,
+          "relatedDomain": "ops",
+          "owner": "龙虾合伙人设计"
+        }
+      ]
+    },
+    {
+      "id": "m-2026-h2",
+      "period": "半年",
+      "deadline": "2026-11-08",
+      "theme": "五条线各有一个 Lv.3",
+      "items": [
+        {
+          "id": "m-h2-1",
+          "title": "内容创作线：写作发布 Lv.3 + 播客 Lv.2",
+          "currentStatus": "写作 Lv.1 播客 Lv.0",
+          "gap": "稳定自动化产出",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "writing"
+        },
+        {
+          "id": "m-h2-2",
+          "title": "投资理财线：异常驱动 Lv.2 + 量化数据管道 Lv.2",
+          "currentStatus": "分析 Lv.3 其余 Lv.0-1",
+          "gap": "闭环自动化 + 数据管道稳定",
+          "priority": "high",
+          "progress": 0.05,
+          "relatedDomain": "stock"
+        },
+        {
+          "id": "m-h2-3",
+          "title": "系统工具线：LLM Todo 上云 + Agent 瘦身",
+          "currentStatus": "本地 Lv.3",
+          "gap": "上云 + 43个 agent 精简到合理的数量",
+          "priority": "medium",
+          "progress": 0.05,
+          "relatedDomain": "system"
+        },
+        {
+          "id": "m-h2-4",
+          "title": "运营增长线：KPI 面板 + 第一个变现渠道探索",
+          "currentStatus": "全部 Lv.0",
+          "gap": "数据采集 + 变现模式验证",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "ops"
+        }
+      ]
+    },
+    {
+      "id": "m-2027",
+      "period": "1年",
+      "deadline": "2027-05-08",
+      "items": [
+        {
+          "id": "m-2027-1",
+          "title": "龙虾生态 = 个人操作系统",
+          "currentStatus": "工具散落",
+          "gap": "统一入口、统一仪表盘、闭环自动化成为标配",
+          "priority": "high",
+          "progress": 0.05,
+          "relatedTasks": [],
+          "relatedDomain": "system"
+        },
+        {
+          "id": "m-2027-2",
+          "title": "投资系统可复盘运行",
+          "currentStatus": "分析有，闭环没有",
+          "gap": "从分析→数据→回测→仿真→实盘至少走到仿真",
+          "priority": "high",
+          "progress": 0.03,
+          "relatedTasks": [],
+          "relatedDomain": "stock"
+        },
+        {
+          "id": "m-2027-3",
+          "title": "内容多模态流水线",
+          "currentStatus": "文本有，其余没有",
+          "gap": "文本→语音→图像→视频 联动产出",
+          "priority": "medium",
+          "progress": 0.02,
+          "relatedTasks": [],
+          "relatedDomain": "writing"
+        }
+      ],
+      "theme": "个人操作系统成形"
+    },
+    {
+      "id": "m-2031",
+      "period": "5年",
+      "deadline": "2031-05-08",
+      "items": [
+        {
+          "id": "m-2031-1",
+          "title": "长期可维护的 Agent 生态",
+          "currentStatus": "已有多 Agent 和 Skills，但状态散落",
+          "gap": "需要治理模型、运行监控、成本控制和生命周期管理。",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedTasks": [],
+          "relatedDomain": "task-management"
+        },
+        {
+          "id": "m-2031-2",
+          "title": "个人知识、创作、投资系统互相增益",
+          "currentStatus": "各业务线单点推进",
+          "gap": "需要统一上下文、复盘机制和跨域协作协议。",
+          "priority": "high",
+          "progress": 0.08,
+          "relatedTasks": [],
+          "relatedDomain": "task-management"
+        }
+      ]
+    }
+  ],
+  "openQuestions": [
+    "视频能力什么时候启动？等播客闭环跑通后（约6月）再决定",
+    "Agent 瘦身：哪些合并或砍掉？先等 KPI 面板有数据再判断",
+    "LLM Wiki 知识库的定位是什么？和 LLM Todo 的关系？",
+    "变现方向：内容变现 vs 工具变现 vs 投资收益，哪个先？",
+    "时间投资回报率怎么量化？需要一个轻量的时间记录方式"
+  ],
+  "updated": "2026-05-08"
+}

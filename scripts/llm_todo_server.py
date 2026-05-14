@@ -50,6 +50,9 @@ GLM_API_KEY = os.environ.get("GLM_API_KEY", "73a397915e3646f9ab9d9ed7cfd04611.CX
 GLM_BASE_URL = os.environ.get("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
 GLM_MODEL = os.environ.get("GLM_MODEL", "glm-4-flash")
 
+REMOTE_SYNC_URL = os.environ.get("LLM_TODO_REMOTE_SYNC_URL", "").rstrip("/")
+REMOTE_SYNC_TOKEN = os.environ.get("LLM_TODO_REMOTE_SYNC_TOKEN", "").strip()
+
 CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -811,6 +814,55 @@ def sorted_tasks(tasks: list[dict]) -> list[dict]:
 
 def sorted_history(tasks: list[dict]) -> list[dict]:
     return sorted(tasks, key=lambda task: (task.get("updated", ""), task.get("created", ""), task.get("title", "")), reverse=True)
+
+
+def sync_to_remote(remote_url: str = "", token: str = "") -> dict:
+    """Export data and web files to remote server."""
+    url = remote_url or REMOTE_SYNC_URL
+    tok = token or REMOTE_SYNC_TOKEN
+    if not url:
+        return {"ok": False, "error": "未配置远程同步地址（LLM_TODO_REMOTE_SYNC_URL）"}
+
+    web_files = []
+    for item in WEB.rglob("*"):
+        if item.is_file() and item.suffix in {".html", ".js", ".css", ".json", ".png", ".svg", ".ico"}:
+            web_files.append({"path": str(item.relative_to(WEB)), "size": item.stat().st_size})
+
+    data_snapshot = {
+        "tasks": load_tasks(),
+        "history": load_history(),
+        "capabilities": capabilities_payload(),
+        "agents": agents_payload(),
+        "roadmap": roadmap_payload(),
+        "skill_tree": skill_tree_payload(),
+        "character": character_payload(),
+    }
+
+    result = {"ok": True, "web_files": len(web_files), "data_size": len(json.dumps(data_snapshot, ensure_ascii=False))}
+
+    if tok:
+        # Push data snapshot to remote server
+        try:
+            req = urllib.request.Request(
+                f"{url}/api/sync/import",
+                data=json.dumps({"data": data_snapshot, "web_files": web_files}).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {tok}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                remote_result = json.loads(resp.read().decode("utf-8"))
+                result["remote"] = remote_result
+        except Exception as exc:
+            result["remote_error"] = str(exc)
+
+    result["export"] = {
+        "web": [f["path"] for f in web_files],
+        "data": list(data_snapshot.keys()),
+    }
+    return result
 
 
 def state_payload() -> dict:
@@ -2726,6 +2778,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json({"error": str(exc)}, 400)
                     return
                 self.send_json({"agent": agent, "agents": load_agents()["agents"]}, 201)
+            elif path == "/api/sync":
+                self.send_json(sync_to_remote(payload.get("url", ""), payload.get("token", "")))
             elif path == "/api/undo":
                 self.send_json(undo_last_change())
             elif path == "/api/review/save":

@@ -1,0 +1,700 @@
+{
+  "targets": {
+    "description": "从目标反推路径。先定各领域1年后、半年后、1个月后的目标，再拆解到每周。",
+    "yearTarget": {
+      "deadline": "2027-05-09",
+      "domains": [
+        {
+          "domain": "content",
+          "name": "内容创作",
+          "target": "每周3+篇文章、2期播客、视频启动",
+          "levelGoal": "写作Lv.3, 播客Lv.3, 视频Lv.1",
+          "status": "not_started"
+        },
+        {
+          "domain": "investment",
+          "name": "投资理财",
+          "target": "可复盘的投资系统，年化收益率可追踪，回测能跑",
+          "levelGoal": "投资Lv.3",
+          "status": "not_started"
+        },
+        {
+          "domain": "system",
+          "name": "系统工具",
+          "target": "核心工具上云、安卓端可用、6+工作台运转",
+          "levelGoal": "上云Lv.3, 多端Lv.2",
+          "status": "in_progress"
+        },
+        {
+          "domain": "health",
+          "name": "家庭健康",
+          "target": "全家健康档案完整，医生agent主动学习+提醒检查",
+          "levelGoal": "健康Lv.3",
+          "status": "not_started"
+        },
+        {
+          "domain": "parenting",
+          "name": "育儿教育",
+          "target": "宝宝能力档案完整，每周针对性活动，教育顾问持续运行，游戏化提升",
+          "levelGoal": "育儿Lv.3",
+          "status": "not_started"
+        },
+        {
+          "domain": "finance",
+          "name": "家庭财务",
+          "target": "财务全景清晰，预算管理运转",
+          "levelGoal": "财务Lv.2",
+          "status": "not_started"
+        },
+        {
+          "domain": "shopping",
+          "name": "购物管理",
+          "target": "购物流程自动化，APP可用",
+          "levelGoal": "购物Lv.2",
+          "status": "not_started"
+        },
+        {
+          "domain": "social",
+          "name": "社交人情",
+          "target": "人情往来不遗漏，节日提醒系统运转",
+          "levelGoal": "社交Lv.2",
+          "status": "not_started"
+        },
+        {
+          "domain": "growth",
+          "name": "运营增长",
+          "target": "各平台数据可看，粉丝有增长",
+          "levelGoal": "运营Lv.2",
+          "status": "not_started"
+        },
+        {
+          "domain": "commercial",
+          "name": "商业化",
+          "target": "至少一个变现渠道验证",
+          "levelGoal": "商业Lv.1",
+          "status": "not_started"
+        },
+        {
+          "domain": "printing",
+          "name": "打印创意",
+          "target": "每日打印稳定运行（2D+3D），宝宝每天收到惊喜",
+          "levelGoal": "打印Lv.2",
+          "status": "not_started"
+        }
+      ]
+    },
+    "halfYearTarget": {
+      "deadline": "2026-11-09",
+      "domains": [
+        {
+          "domain": "content",
+          "name": "内容创作",
+          "target": "文章周2篇稳定，播客月2期，视频未启动",
+          "status": "not_started"
+        },
+        {
+          "domain": "investment",
+          "name": "投资理财",
+          "target": "回测系统可用，每日分析恢复，年化开始追踪",
+          "status": "not_started"
+        },
+        {
+          "domain": "system",
+          "name": "系统工具",
+          "target": "上云完成，安卓端开发中",
+          "status": "in_progress"
+        },
+        {
+          "domain": "health",
+          "name": "家庭健康",
+          "target": "全家档案完整，提醒机制运行",
+          "status": "not_started"
+        },
+        {
+          "domain": "parenting",
+          "name": "育儿教育",
+          "target": "能力档案建立，评估体系用起来，每周有活动建议",
+          "status": "not_started"
+        },
+        {
+          "domain": "finance",
+          "name": "家庭财务",
+          "target": "财务全景录入，预算开始执行",
+          "status": "not_started"
+        },
+        {
+          "domain": "shopping",
+          "name": "购物管理",
+          "target": "APP上线，流程跑通",
+          "status": "not_started"
+        },
+        {
+          "domain": "social",
+          "name": "社交人情",
+          "target": "基本提醒系统运行（生日/节日/人情）",
+          "status": "not_started"
+        },
+        {
+          "domain": "growth",
+          "name": "运营增长",
+          "target": "KPI面板可用，数据每周采集",
+          "status": "not_started"
+        },
+        {
+          "domain": "commercial",
+          "name": "商业化",
+          "target": "方向确定，开始尝试",
+          "status": "not_started"
+        },
+        {
+          "domain": "printing",
+          "name": "打印创意",
+          "target": "每日打印稳定运行",
+          "status": "not_started"
+        }
+      ]
+    },
+    "oneMonthTarget": {
+      "deadline": "2026-06-09",
+      "domains": [
+        {
+          "domain": "content",
+          "name": "内容创作",
+          "target": "累计发文12篇+，运营周报4期数据积累，播客出2期",
+          "status": "not_started"
+        },
+        {
+          "domain": "investment",
+          "name": "投资理财",
+          "target": "每日分析恢复正常，回测环境可用",
+          "status": "not_started"
+        },
+        {
+          "domain": "system",
+          "name": "系统工具",
+          "target": "LLM Todo上云可用，迁移完成",
+          "status": "in_progress"
+        },
+        {
+          "domain": "health",
+          "name": "家庭健康",
+          "target": "全家历史数据录入，医生agent学习机制启动",
+          "status": "not_started"
+        },
+        {
+          "domain": "parenting",
+          "name": "育儿教育",
+          "target": "能力档案框架确定，评估体系选定，教育顾问开始推建议",
+          "status": "not_started"
+        },
+        {
+          "domain": "growth",
+          "name": "运营增长",
+          "target": "运营数据周报稳定运行",
+          "status": "not_started"
+        },
+        {
+          "domain": "printing",
+          "name": "打印创意",
+          "target": "每日打印流程跑通",
+          "status": "not_started"
+        }
+      ]
+    }
+  },
+  "milestones": [
+    {
+      "id": "m-next-week",
+      "period": "下周（5/12-5/16）",
+      "deadline": "2026-05-16",
+      "theme": "内容产出加速 + 运营数据基建 + 并行低成本任务启动",
+      "items": [
+        {
+          "id": "m-nw-1",
+          "title": "配置内容自动化流程（随想→写作→发布定时触发）",
+          "currentStatus": "随想专家收到内容但博客写作专家不会自动拉取",
+          "gap": "配置cron定时任务，让博客写作专家定期检查随想记录，有新素材自动生成文章。",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-nw-2",
+          "title": "发文至少3篇",
+          "currentStatus": "累计仅2篇，产出节奏未建立",
+          "gap": "本周产出3篇，建立稳定节奏。老板每天语音发随想，agent负责产出+发布",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "content",
+          "owner": "老板（提供随想素材）+ agent（写作+发布）"
+        },
+        {
+          "id": "m-nw-2b",
+          "title": "搭建运营数据周报",
+          "currentStatus": "各平台数据完全未跟踪",
+          "gap": "发布管家开始每周检查数据，推周报到飞书",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "growth",
+          "owner": "文章发布管家"
+        },
+        {
+          "id": "m-nw-3",
+          "title": "播客完整跑一期",
+          "currentStatus": "火山引擎跑通，但未完整闭环",
+          "gap": "选题→脚本→TTS→后期→发布全走一遍",
+          "priority": "medium",
+          "progress": 0.1,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-nw-4",
+          "title": "云部署迁移方案准备",
+          "currentStatus": "服务器已买，域名备案中",
+          "gap": "整理迁移清单，理清依赖关系",
+          "priority": "medium",
+          "progress": 0.05,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-nw-5",
+          "title": "家庭健康档案：补录历史数据",
+          "currentStatus": "有目录结构，无内容",
+          "gap": "把过去体检报告、各项指标录入家庭健康档案（老板/老婆/宝宝）",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "老板提供数据 + agent录入"
+        },
+        {
+          "id": "m-nw-5b",
+          "title": "每日打印惊喜机制启动",
+          "currentStatus": "硬件已买，需搭建生成+打印流程",
+          "gap": "确认打印机型号和连接方式，设计每日自动生成内容并推送打印",
+          "priority": "medium",
+          "progress": 0.05,
+          "relatedDomain": "life",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-nw-6",
+          "title": "投资系统恢复",
+          "currentStatus": "推送停了",
+          "gap": "排查原因，恢复每日分析推送",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "investment",
+          "owner": "效率管家"
+        }
+      ]
+    },
+    {
+      "id": "m-may",
+      "period": "本月",
+      "deadline": "2026-06-04",
+      "theme": "两个闭环到 Lv.2+",
+      "items": [
+        {
+          "id": "m-may-1",
+          "title": "写作发布闭环到 Lv.3",
+          "currentStatus": "Lv.1 不稳定",
+          "gap": "连续2周零人工干预自动发布",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-may-2",
+          "title": "投资系统异常驱动试跑",
+          "currentStatus": "未开始",
+          "gap": "设计异常规则，试跑1周，只推异常通知",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "investment",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-may-3",
+          "title": "技能树前端落地（v4）",
+          "currentStatus": "设计文档 v4 完成",
+          "gap": "六条线数据模型 + 前端树形可视化",
+          "priority": "medium",
+          "progress": 0.15,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-may-4",
+          "title": "复盘两个闭环，总结可复制模式",
+          "currentStatus": "未开始",
+          "gap": "写一份闭环模式文档，供后续 agent 复制",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "龙虾合伙人"
+        },
+        {
+          "id": "m-may-5",
+          "title": "宝宝能力档案+评估体系设计",
+          "currentStatus": "AI教育顾问无实质进展",
+          "gap": "设计宝宝各方面能力技能树（认知/语言/运动/社交），用实际评估体系做全面评估",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "龙虾合伙人设计 + 效率管家实现"
+        },
+        {
+          "id": "m-may-6",
+          "title": "家庭财务全景建立",
+          "currentStatus": "完全没开始",
+          "gap": "录入家庭财务信息（收入/支出/资产/负债），建立预算管理机制",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "老板提供数据 + agent录入"
+        },
+        {
+          "id": "m-may-7",
+          "title": "投资回测系统搭建",
+          "currentStatus": "QuantDing仓库待研究",
+          "gap": "搭建回测环境，老板自己走一遍回测流程，建立持续学习机制",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "investment",
+          "owner": "效率管家"
+        }
+      ]
+    },
+    {
+      "id": "m-q2",
+      "period": "Q2",
+      "deadline": "2026-06-30",
+      "theme": "两个闭环 + 基础设施",
+      "items": [
+        {
+          "id": "m-q2-1",
+          "title": "写作→发布闭环跑稳（到 Lv.3）",
+          "currentStatus": "Lv.1 不稳定",
+          "gap": "连续2周零人工干预自动发布",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-2",
+          "title": "投资系统恢复+异常驱动试跑",
+          "currentStatus": "推送停了",
+          "gap": "恢复运行 + 异常驱动模式试跑",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "investment",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-3",
+          "title": "KPI 面板基线数据录入",
+          "currentStatus": "各平台粉丝数未知",
+          "gap": "手动录入+部分自动化采集",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "growth",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-4",
+          "title": "技能树前端落地",
+          "currentStatus": "设计文档 v4 完成",
+          "gap": "后端数据模型 + 前端可视化",
+          "priority": "medium",
+          "progress": 0.15,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-5",
+          "title": "复盘两个闭环，总结可复制模式",
+          "currentStatus": "未开始",
+          "gap": "闭环模式文档",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "龙虾合伙人"
+        },
+        {
+          "id": "m-q2-6",
+          "title": "宝宝能力档案建立（技能树+评估体系+游戏化提升）",
+          "currentStatus": "AI教育顾问无实质进展",
+          "gap": "各方面能力评估+设计提升游戏+定期追踪",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "龙虾合伙人 + AI教育顾问"
+        },
+        {
+          "id": "m-q2-7",
+          "title": "家庭财务管理流程建立",
+          "currentStatus": "完全没开始",
+          "gap": "财务全景+预算管理+定期同步",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-8",
+          "title": "各领域Agent自主学习机制",
+          "currentStatus": "Agent都是被动回答",
+          "gap": "育儿/健康/投资agent定时学习领域知识，主动给建议",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q2-9",
+          "title": "每日打印惊喜机制稳定运行",
+          "currentStatus": "完全没开始",
+          "gap": "每天自动生成并打印一张图给宝宝",
+          "priority": "low",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "效率管家"
+        }
+      ]
+    },
+    {
+      "id": "m-q3",
+      "period": "Q3",
+      "deadline": "2026-09-30",
+      "theme": "闭环复制 + 上云 + 商业化探索",
+      "items": [
+        {
+          "id": "m-q3-1",
+          "title": "闭环经验复制到播客",
+          "currentStatus": "播客 Lv.0",
+          "gap": "利用写作闭环经验，建立播客选题→脚本→录制流程",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q3-2",
+          "title": "LLM Todo 上云部署",
+          "currentStatus": "云服务器已买，域名备案中，待部署",
+          "gap": "买服务器 + 部署 + 多端访问",
+          "priority": "high",
+          "progress": 0.15,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q3-3",
+          "title": "KPI 面板自动化采集",
+          "currentStatus": "手动录入",
+          "gap": "cron 定时抓取各平台粉丝/阅读量",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "growth",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q3-4",
+          "title": "商业化方向初步探索",
+          "currentStatus": "未开始",
+          "gap": "评估内容变现 vs 工具变现 vs 投资收益的可能性",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "commercial",
+          "owner": "龙虾合伙人 + 老板"
+        },
+        {
+          "id": "m-q3-5",
+          "title": "Agent 瘦身（43→合理数量）",
+          "currentStatus": "43个 agent，部分长期无活动",
+          "gap": "制定判断标准，识别暂停/合并/下线候选",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "龙虾合伙人 + 效率管家"
+        },
+        {
+          "id": "m-q3-6",
+          "title": "旅游规划流程建立",
+          "currentStatus": "完全没计划",
+          "gap": "建立旅游规划模板/流程，下次出行直接用",
+          "priority": "low",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q3-7",
+          "title": "社交/人情世故管理初步建立",
+          "currentStatus": "完全没开始",
+          "gap": "亲友生日/节日送礼/人情往来提醒系统",
+          "priority": "low",
+          "progress": 0,
+          "relatedDomain": "life",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q3-8",
+          "title": "购物管理流程打通",
+          "currentStatus": "购物清单专家在做APP",
+          "gap": "各领域购物需求统一汇总→购物专家处理",
+          "priority": "medium",
+          "progress": 0.05,
+          "relatedDomain": "life",
+          "owner": "购物专家 + 效率管家"
+        }
+      ]
+    },
+    {
+      "id": "m-q4",
+      "period": "Q4",
+      "deadline": "2026-12-31",
+      "theme": "多端 + 深化 + 变现验证",
+      "items": [
+        {
+          "id": "m-q4-1",
+          "title": "安卓端/小程序端开发",
+          "currentStatus": "仅有 Web 端",
+          "gap": "核心工作台的移动端适配",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "system",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q4-2",
+          "title": "视频流程启动",
+          "currentStatus": "Lv.0",
+          "gap": "视频脚本→生成→剪辑→发布的初步流程",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q4-3",
+          "title": "播客稳定产出（≥月2期）",
+          "currentStatus": "Lv.0",
+          "gap": "从试运行到稳定产出",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "content",
+          "owner": "效率管家"
+        },
+        {
+          "id": "m-q4-4",
+          "title": "第一个变现渠道验证",
+          "currentStatus": "未开始",
+          "gap": "选定一个方向，跑通从0到1",
+          "priority": "medium",
+          "progress": 0,
+          "relatedDomain": "commercial",
+          "owner": "老板 + 龙虾合伙人"
+        },
+        {
+          "id": "m-q4-5",
+          "title": "六条线各有一个技能到 Lv.3",
+          "currentStatus": "仅内容创作和系统工具有部分 Lv.3",
+          "gap": "投资/生活/运营/商业化各至少一个 Lv.3",
+          "priority": "high",
+          "progress": 0.05,
+          "relatedDomain": "global",
+          "owner": "全员"
+        }
+      ]
+    },
+    {
+      "id": "m-2026",
+      "period": "2026年底",
+      "deadline": "2026-12-31",
+      "theme": "龙虾从工具箱变成操作系统",
+      "items": [
+        {
+          "id": "m-2026-1",
+          "title": "龙虾 = 个人操作系统",
+          "currentStatus": "工具散落，大部分需要人工触发",
+          "gap": "大部分 Agent 自运行，老板只看一部分",
+          "priority": "high",
+          "progress": 0.05,
+          "relatedDomain": "system"
+        },
+        {
+          "id": "m-2026-2",
+          "title": "每个工作流有独立工作台",
+          "currentStatus": "3个已有，其余待建",
+          "gap": "至少6个工作台可用（Todo/投资/写稿/Wiki/播客/发布）",
+          "priority": "high",
+          "progress": 0.1,
+          "relatedDomain": "system"
+        },
+        {
+          "id": "m-2026-3",
+          "title": "至少一个闭环验证过的自动化模式可复制",
+          "currentStatus": "无闭环",
+          "gap": "闭环模式文档 + 至少2个 agent 复制成功",
+          "priority": "high",
+          "progress": 0,
+          "relatedDomain": "system"
+        }
+      ]
+    }
+  ],
+  "crossCuttingConcerns": [
+    {
+      "id": "ccc-ops",
+      "title": "Agent Ops 层 / 健康监控",
+      "description": "所有 agent 的运行状态需要集中看护。哪个活着、哪个在干活、哪个挂了没人管、哪个需要老板介入。建立 agent 运行状态看板。",
+      "priority": "high",
+      "timeline": "Q2 启动（现在就需要）",
+      "rationale": "股票分析推送停了没人知道。43个agent在跑，0个被监控。agent一挂可能过一周才发现。",
+      "owner": "效率管家 + 技术研发总监"
+    },
+    {
+      "id": "ccc-knowledge-bus",
+      "title": "知识总线 / Agent 间知识连续性",
+      "description": "各 agent 各自学习，学到的东西不共享。投资分析学到的东西内容创作不知道。需要建立知识总线（基于 LLM Wiki 或类似机制），让 agent 间能互相读取沉淀的知识。",
+      "priority": "high",
+      "timeline": "Q2 设计，Q3 实现",
+      "rationale": "agent 单机学习不形成集体智能。知识积累在 agent 之间是孤岛。",
+      "owner": "龙虾合伙人（设计）+ 技术研发总监（实现）"
+    },
+    {
+      "id": "ccc-energy-model",
+      "title": "老板精力模型 / 注意力预算管理",
+      "description": "老板每天只有非常有限的注意力和决策精力。所有 agent 的请求频率、推送量、需要决策的事项必须适配这个约束。需要建模：老板每天愿意花多少时间在这件事上，哪些值得占用他的注意力。",
+      "priority": "high",
+      "timeline": "Q2 建立模型",
+      "rationale": "11个领域都在向老板要时间。不加约束地扩，老板会更忙而不是更轻松。精力管理不是第七个领域，是所有领域的上层约束。",
+      "owner": "龙虾合伙人"
+    }
+  ],
+  "openQuestions": [
+    "视频能力什么时候启动？Q4 开始，依赖播客闭环跑通",
+    "Agent 瘦身标准：30天无活动→候选暂停，功能重叠→候选合并",
+    "LLM Wiki 定位？独立工作台，和 LLM Todo 平级",
+    "商业化方向：Q3 探索，Q4 验证一个",
+    "时间投资回报率怎么量化？需要一个轻量的时间记录方式",
+    "宝宝评估体系用什么框架？需要调研适龄（4岁）评估标准",
+    "家庭财务信息怎么安全存储？涉及隐私数据",
+    "Agent自主学习机制怎么实现？定时爬取+摘要+推送？",
+    "社交管理的数据来源？手动录入 vs 从日历/通讯录同步",
+    "知识总线的技术选型：LLM Wiki 改造还是独立做知识服务？",
+    "Agent 健康监控怎么做？心跳ping vs 输出日志分析 vs 消息超时检测？",
+    "老板精力模型怎么落地？每天最多处理几件事？什么值得占用决策时间？"
+  ],
+  "reviewCadence": {
+    "weekly": "每周小复盘（龙虾合伙人 + 老板，飞书群聊）",
+    "quarterly": "每季度末大复盘（等级评估 + 目标达成 + 下季度调整）"
+  },
+  "updated": "2026-05-09"
+}}
