@@ -2113,6 +2113,126 @@ pre {
   border-color: #66bb6a;
 }
 
+/* ===== Modal ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(21, 35, 45, 0.45);
+  padding: 20px;
+}
+
+.modal-panel {
+  width: min(580px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: 0 20px 48px rgba(21, 35, 45, 0.2);
+  padding: 20px;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.icon-button {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  border-color: var(--line);
+  background: var(--panel-soft);
+  color: var(--ink);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.form-grid .full-field {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.modal-actions button {
+  min-height: 38px;
+}
+
+.modal-actions button:last-child {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Planning Quick Links ===== */
+.planning-quick-links a:hover {
+  border-color: var(--accent) !important;
+  background: #e7f0ed !important;
+}
+
+/* Week Plan */
+.week-task-item[data-task-id] {
+  cursor: pointer;
+}
+  background: #e8f5e9;
+  border-color: #66bb6a;
+}
+
 .week-task-item.done {
   background: var(--panel-soft);
   opacity: 0.6;

@@ -1,6 +1,5 @@
 let state = null;
 let historyState = { tasks: [] };
-let planningState = { domains: [], agents: [], roadmap: { milestones: [], openQuestions: [], updated: "" } };
 let activeDoc = "todo/index.md";
 let chatMessages = [];
 let activeView = "tasks";
@@ -14,8 +13,7 @@ const priorityLabels = { high: "高", medium: "中", low: "低" };
 const kindLabels = { index: "索引", horizon: "时间尺度", area: "领域", log: "日志", review: "评审", page: "页面" };
 const priorityMarks = { high: "🔴", medium: "🟡", low: "⚪" };
 const typeLabels = { personal: "个人", agent: "Agent", review: "评审", discuss: "讨论" };
-const typeColors = { personal: "#1677ff", agent: "#722ed1", review: "#fa8c16", discuss: "#52c41a" };
-const agentStatusLabels = { active: "活跃", idle: "空闲", disabled: "停用" };
+const typeColors = { personal: "#1677ff", agent: "#52c41a", review: "#fa8c16", discuss: "#722ed1" };
 const horizonRanks = { today: 0, week: 1, month: 2, quarter: 3, year: 4, decade: 5, lifetime: 6 };
 const horizonDocLabels = [
   ["lifetime", "人生尺度"],
@@ -109,36 +107,19 @@ function sortTasks(tasks) {
   });
 }
 
-function clampPlanningPercent(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return 0;
-  const percent = number <= 1 ? number * 100 : number;
-  return Math.max(0, Math.min(100, Math.round(percent)));
-}
-
-function starRating(value) {
-  const count = Math.max(0, Math.min(5, Number(value) || 0));
-  return `${"★".repeat(count)}${"☆".repeat(5 - count)}`;
-}
-
-function statusClass(value) {
-  return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
-}
-
-function domainById(id) {
-  return planningState.domains.find((domain) => domain.id === id) || null;
-}
-
 function renderStats() {
   const total = state.stats.total ?? state.stats.tasks;
   document.getElementById("task-count").textContent = `${state.stats.active} 个进行中 / 共 ${total} 个`;
-  document.getElementById("stat-strip").innerHTML = `
-    <span><strong>${state.stats.active}</strong> 进行中</span>
-    <span><strong>${state.stats.done}</strong> 已完成</span>
-    <span><strong>${state.stats.dropped || 0}</strong> 已放弃</span>
-    <span><strong>${state.stats.planningDocs}</strong> 规划页</span>
-    <span><strong>${Object.keys(state.stats.byArea).length}</strong> 领域</span>
-  `;
+  const strip = document.getElementById("stat-strip");
+  if (strip) {
+    strip.innerHTML = `
+      <span><strong>${state.stats.active}</strong> 进行中</span>
+      <span><strong>${state.stats.done}</strong> 已完成</span>
+      <span><strong>${state.stats.dropped || 0}</strong> 已放弃</span>
+      <span><strong>${state.stats.planningDocs}</strong> 规划页</span>
+      <span><strong>${Object.keys(state.stats.byArea).length}</strong> 领域</span>
+    `;
+  }
   document.getElementById("provider-select").innerHTML = state.stats.providers
     .map((provider) => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.name)}${provider.configured ? "" : " (未配置)"}</option>`)
     .join("");
@@ -304,10 +285,14 @@ function renderWeekPlan() {
         .sort((a, b) => (a.priority === "high" ? -1 : 1))
         .map((task) => {
           const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
+          const taskType = task.type || "personal";
+          const typeColor = typeColors[taskType] || "#1677ff";
+          const typeLabel = typeLabels[taskType] || taskType;
           const statusIcon = task.status === "active" ? "" : `[${escapeHtml(statusLabels[task.status] || task.status)}]`;
-          return `<div class="week-task-item ${escapeHtml(task.status)}" title="${escapeAttr(task.title)}">
+          return `<div class="week-task-item ${escapeHtml(task.status)}" data-task-id="${escapeAttr(task.id)}" title="${escapeAttr(task.title)}">
             <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
             <span class="week-task-meta">${statusIcon} ${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")}</span>
+            <span style="display:inline-block;padding:0 6px;border-radius:3px;background:${typeColor}20;color:${typeColor};font-size:10px;margin-top:2px;">${escapeHtml(typeLabel)}</span>
             <span class="week-task-actions" style="display:flex;gap:4px;margin-top:4px;">
               ${task.status === "active" ? `<button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button><button type="button" data-action="waiting" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">⏳</button>` : ""}
               ${task.status === "waiting" ? `<button type="button" data-action="active" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">▶️</button><button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button>` : ""}
@@ -334,9 +319,13 @@ function renderWeekPlan() {
     const unsatHtml = unscheduled
       .map((task) => {
         const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
-        return `<div class="week-task-item ${escapeHtml(task.status)}" onclick="openTaskDetail('${escapeAttr(task.id)}')" title="${escapeAttr(task.title)}">
+        const taskType = task.type || "personal";
+        const typeColor = typeColors[taskType] || "#1677ff";
+        const typeLabel = typeLabels[taskType] || taskType;
+        return `<div class="week-task-item ${escapeHtml(task.status)}" data-task-id="${escapeAttr(task.id)}" title="${escapeAttr(task.title)}">
           <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
           <span class="week-task-meta">${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")} · 未安排日期</span>
+          <span style="display:inline-block;padding:0 6px;border-radius:3px;background:${typeColor}20;color:${typeColor};font-size:10px;">${escapeHtml(typeLabel)}</span>
         </div>`;
       })
       .join("");
@@ -408,111 +397,9 @@ function renderHorizons() {
     .join("");
 }
 
-function renderPlanningStats() {
-  const activeAgents = planningState.agents.filter((agent) => agent.status === "active").length;
-  const plannedItems = (planningState.roadmap.milestones || []).reduce((total, milestone) => total + (Array.isArray(milestone.items) ? milestone.items.length : 0), 0);
-  document.getElementById("planning-map-stats").innerHTML = `
-    <span><strong>${planningState.domains.length}</strong> 能力域</span>
-    <span><strong>${planningState.agents.length}</strong> Agents</span>
-    <span><strong>${activeAgents}</strong> 活跃</span>
-    <span><strong>${plannedItems}</strong> 规划项</span>
-  `;
-}
-
-function renderPlanningRoadmap() {
-  setText("planning-roadmap-updated", planningState.roadmap.updated ? `更新 ${planningState.roadmap.updated}` : "未记录更新时间");
-  const milestones = Array.isArray(planningState.roadmap.milestones) ? planningState.roadmap.milestones : [];
-  document.getElementById("planning-roadmap-grid").innerHTML =
-    milestones.length === 0
-      ? '<p class="empty">暂无路线图数据。</p>'
-      : milestones
-          .map((milestone) => {
-            const items = Array.isArray(milestone.items) ? milestone.items.slice(0, 3) : [];
-            return `
-              <article class="roadmap-card">
-                <div class="roadmap-card-head">
-                  <strong>${escapeHtml(milestone.period || milestone.id || "未命名周期")}</strong>
-                  <span>→ ${escapeHtml(milestone.deadline || "--")}</span>
-                </div>
-                <div class="roadmap-items">
-                  ${
-                    items.length === 0
-                      ? '<p class="empty">暂无目标项。</p>'
-                      : items
-                          .map((item) => {
-                            const percent = clampPlanningPercent(item.progress);
-                            const domain = domainById(item.relatedDomain);
-                            return `
-                              <div class="roadmap-item">
-                                <div class="progress-meta">
-                                  <strong>${escapeHtml(priorityMarks[item.priority] || "⚪")} ${escapeHtml(item.title || item.id || "未命名目标")}</strong>
-                                  <span>${percent}%</span>
-                                </div>
-                                <div class="meter" aria-label="${escapeHtml(item.title || "目标")}进度">
-                                  <span style="width: ${percent}%"></span>
-                                </div>
-                                <p>${escapeHtml(item.currentStatus || "")}${item.gap ? ` · Gap: ${escapeHtml(item.gap)}` : ""}</p>
-                                <small>${escapeHtml(domain ? domain.name : item.relatedDomain || "")}</small>
-                              </div>
-                            `;
-                          })
-                          .join("")
-                  }
-                </div>
-              </article>
-            `;
-          })
-          .join("");
-}
-
-function renderPlanningCapabilities() {
-  document.getElementById("planning-capability-grid").innerHTML =
-    planningState.domains.length === 0
-      ? '<p class="empty">暂无能力域数据。</p>'
-      : planningState.domains
-          .map((domain) => {
-            const level = domain.level ?? domain.maturity ?? 0;
-            const agents = Array.isArray(domain.agents) ? domain.agents : [];
-            return `
-              <a class="capability-card" href="/map">
-                <strong>${escapeHtml(domain.name || domain.id)}</strong>
-                <span class="stars" aria-label="${Number(level) || 0} 星">${escapeHtml(starRating(level))}</span>
-                <span>${agents.length} 个 Agent</span>
-                <small>${escapeHtml(domain.description || "")}</small>
-              </a>
-            `;
-          })
-          .join("");
-}
-
-function renderPlanningAgents() {
-  setText("planning-agent-count", `${planningState.agents.length} 个 Agent`);
-  const agents = planningState.agents.slice(0, 10);
-  document.getElementById("planning-agent-list").innerHTML =
-    agents.length === 0
-      ? '<p class="empty">暂无 Agent 状态。</p>'
-      : agents
-          .map((agent) => {
-            const domain = domainById(agent.relatedDomain);
-            const status = agent.status || "unknown";
-            return `
-              <article class="planning-agent-row">
-                <div>
-                  <strong>${escapeHtml(agent.name || agent.id)}</strong>
-                  <span>${escapeHtml(agent.id || "")} · ${escapeHtml(domain ? domain.name : agent.relatedDomain || "--")}</span>
-                </div>
-                <span class="status-badge agent-${escapeHtml(statusClass(status))}">${escapeHtml(agentStatusLabels[status] || status)}</span>
-              </article>
-            `;
-          })
-          .join("");
-}
-
 function renderPlanningDashboard() {
-  renderPlanningStats();
-  renderPlanningRoadmap();
-  renderPlanningCapabilities();
-  renderPlanningAgents();
+  // Planning dashboard moved to /map page
+  // Quick link cards shown in index.html for navigation
 }
 
 function renderTasks() {
@@ -552,10 +439,14 @@ function renderHistory() {
       ? '<p class="empty">暂无已完成或已放弃任务。</p>'
       : tasks
           .map(
-            (task) => `
+            (task) => {
+              const taskType = task.type || "personal";
+              const typeColor = typeColors[taskType] || "#1677ff";
+              const typeLabel = typeLabels[taskType] || taskType;
+              return `
               <article class="task-item ${escapeHtml(task.status)} archived">
                 <div>
-                  <strong>${escapeHtml(task.title)}</strong>
+                  <strong>${escapeHtml(task.title)} <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:${typeColor}20;color:${typeColor};font-size:11px;margin-left:6px;vertical-align:middle;">${escapeHtml(typeLabel)}</span></strong>
                   <span>${taskMeta(task, true)}</span>
                   ${renderTags(task)}
                   <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
@@ -564,8 +455,8 @@ function renderHistory() {
                   <button type="button" data-action="active" data-id="${escapeHtml(task.id)}">恢复</button>
                 </div>
               </article>
-            `,
-          )
+            `;
+            })
           .join("");
 }
 
@@ -603,11 +494,8 @@ function resolveDocPath(link) {
 }
 
 async function refresh() {
-  const [nextState, capabilities, agents, roadmap] = await Promise.all([
+  const [nextState] = await Promise.all([
     api("/api/state"),
-    api("/api/capabilities").catch(() => ({ domains: [] })),
-    api("/api/agents-status").catch(() => ({ agents: [] })),
-    api("/api/roadmap").catch(() => ({ milestones: [], openQuestions: [], updated: "" })),
   ]);
   let nextHistory = { tasks: nextState.history || [] };
   try {
@@ -617,11 +505,6 @@ async function refresh() {
   }
   state = nextState;
   historyState = nextHistory;
-  planningState = {
-    domains: Array.isArray(capabilities.domains) ? capabilities.domains : [],
-    agents: Array.isArray(agents.agents) ? agents.agents : [],
-    roadmap: roadmap || { milestones: [], openQuestions: [], updated: "" },
-  };
   const currentProvider = providerValue();
   renderStats();
   if ([...document.getElementById("provider-select").options].some((option) => option.value === currentProvider)) {
@@ -776,6 +659,116 @@ async function updateTaskStatus(id, status) {
   renderDocs();
 }
 
+// ===== Task Detail Modal =====
+let editTaskId = null;
+
+function openTaskDetail(taskId) {
+  const allTasks = (state?.tasks || []).concat(historyState?.tasks || []);
+  const task = allTasks.find((t) => t.id === taskId);
+  if (!task) return;
+
+  editTaskId = taskId;
+  document.getElementById("edit-title").value = task.title || "";
+  document.getElementById("edit-due").value = task.due || "";
+  document.getElementById("edit-priority").value = task.priority || "medium";
+  document.getElementById("edit-horizon").value = task.horizon || "week";
+  document.getElementById("edit-repeat").value = task.repeat || "";
+  document.getElementById("edit-area").value = task.area || "";
+  document.getElementById("edit-type").value = task.type || "personal";
+  document.getElementById("edit-tags").value = Array.isArray(task.tags) ? task.tags.join(", ") : "";
+  document.getElementById("edit-next-action").value = task.nextAction || "";
+  document.getElementById("edit-notes").value = task.notes || "";
+  document.getElementById("task-edit-title").textContent = "编辑任务";
+  document.getElementById("task-edit-meta").textContent = `#${task.id} · ${statusLabels[task.status] || task.status}`;
+  document.getElementById("task-modal").hidden = false;
+}
+
+function closeTaskModal() {
+  document.getElementById("task-modal").hidden = true;
+  editTaskId = null;
+}
+
+async function saveTaskModal(event) {
+  event.preventDefault();
+  if (!editTaskId) return;
+
+  // Parse tags from comma/space separated string
+  const rawTags = document.getElementById("edit-tags").value.trim();
+  const tags = rawTags
+    ? rawTags.split(/[,\s]+/).filter(Boolean)
+    : [];
+
+  const payload = {
+    id: editTaskId,
+    title: document.getElementById("edit-title").value.trim(),
+    due: document.getElementById("edit-due").value,
+    priority: document.getElementById("edit-priority").value,
+    horizon: document.getElementById("edit-horizon").value,
+    repeat: document.getElementById("edit-repeat").value,
+    area: document.getElementById("edit-area").value.trim(),
+    type: document.getElementById("edit-type").value,
+    tags,
+    nextAction: document.getElementById("edit-next-action").value.trim(),
+    notes: document.getElementById("edit-notes").value.trim(),
+  };
+
+  try {
+    const response = await api("/api/tasks/update", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    state = response.state;
+    historyState = { tasks: response.state.history || historyState.tasks };
+    closeTaskModal();
+    renderStats();
+    renderTaskFilterOptions();
+    renderViewTabs();
+    renderTasks();
+    renderHistory();
+    renderDocs();
+  } catch (error) {
+    alert("保存失败: " + error.message);
+  }
+}
+
+// ===== Remote Sync =====
+async function triggerRemoteSync() {
+  const btn = document.getElementById("sync-remote-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "🔄 同步中...";
+  }
+
+  try {
+    const result = await api("/api/sync", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+
+    let message = "";
+    if (result.ok) {
+      message = `同步完成！\nWeb 文件: ${result.web_files} 个\n数据: ${Math.round(result.data_size / 1024)} KB`;
+      if (result.remote) {
+        message += `\n远程推送: ${result.remote.ok ? "成功" : "失败"}`;
+      }
+      if (result.remote_error) {
+        message += `\n远程连接异常: ${result.remote_error}`;
+      }
+      message += `\n\n导出的文件:\n${result.export.web.join("\n")}`;
+    } else {
+      message = `同步失败: ${result.error}`;
+    }
+    alert(message);
+  } catch (error) {
+    alert("同步请求失败: " + error.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "🔄 同步";
+    }
+  }
+}
+
 async function init() {
   setText("server-url", window.location.origin + "/");
   await refresh();
@@ -827,11 +820,27 @@ async function init() {
 
   // Week panel action buttons
   document.getElementById("week-grid")?.addEventListener("click", async (event) => {
+    // Open task detail on card click (if not a button action)
+    const item = event.target.closest(".week-task-item[data-task-id]");
     const button = event.target.closest("button[data-action]");
-    if (!button) return;
-    await updateTaskStatus(button.dataset.id, button.dataset.action);
-    renderWeekPlan(); // Re-render after status change
+    if (button) {
+      await updateTaskStatus(button.dataset.id, button.dataset.action);
+      renderWeekPlan();
+    } else if (item && item.dataset.taskId) {
+      openTaskDetail(item.dataset.taskId);
+    }
   });
+
+  // Task modal controls
+  document.getElementById("task-edit-close")?.addEventListener("click", closeTaskModal);
+  document.getElementById("task-edit-cancel")?.addEventListener("click", closeTaskModal);
+  document.getElementById("task-edit-form")?.addEventListener("submit", saveTaskModal);
+  document.getElementById("task-modal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeTaskModal();
+  });
+
+  // Remote sync button
+  document.getElementById("sync-remote-btn")?.addEventListener("click", triggerRemoteSync);
 
   document.getElementById("doc-list").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-doc]");

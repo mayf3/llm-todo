@@ -82,40 +82,26 @@
         <div class="planning-tab-head">
           <div>
             <h1>规划</h1>
-            <span>长期目标、能力域和 Agent 状态</span>
+            <span>时间尺度文档 · 规划文档阅读</span>
           </div>
-          <a href="/map">打开完整能力地图</a>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="/map">🧭 能力地图</a>
+            <a href="/character">👤 角色</a>
+            <button type="button" id="sync-remote-btn" style="background:#205a4f;color:#fff;border-color:#205a4f;min-height:38px;padding:0 14px;font-weight:600;" title="同步代码到远程服务器">🔄 同步</button>
+          </div>
         </div>
         <div class="stat-strip" id="stat-strip"></div>
         <section class="horizon-band" id="horizon-band"></section>
-        <section class="planning-block">
-          <div class="map-section-head">
-            <div>
-              <h2>规划仪表盘</h2>
-              <span id="planning-roadmap-updated">--</span>
-            </div>
-            <div id="planning-map-stats" class="stats compact-stats"></div>
-          </div>
-          <div id="planning-roadmap-grid" class="roadmap-grid compact-roadmap"></div>
-        </section>
-        <section class="planning-block">
-          <div class="map-section-head">
-            <div>
-              <h2>能力域</h2>
-              <span>来自 /map 的能力事实源</span>
-            </div>
-          </div>
-          <div id="planning-capability-grid" class="capability-grid compact-capability-grid"></div>
-        </section>
-        <section class="planning-block">
-          <div class="map-section-head">
-            <div>
-              <h2>Agent 状态</h2>
-              <span id="planning-agent-count">--</span>
-            </div>
-          </div>
-          <div id="planning-agent-list" class="planning-agent-list"></div>
-        </section>
+        <div class="planning-quick-links" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;">
+          <a href="/map" class="quick-link-card" style="flex:1;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:var(--radius);padding:10px;text-decoration:none;color:var(--ink);background:var(--panel-soft);min-height:56px;">
+            <span style="font-size:24px;">🧭</span>
+            <div><strong>能力地图</strong><br><span style="color:var(--muted);font-size:13px;">能力域 · 路线图 · Agent 状态</span></div>
+          </a>
+          <a href="/character" class="quick-link-card" style="flex:1;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:var(--radius);padding:10px;text-decoration:none;color:var(--ink);background:var(--panel-soft);min-height:56px;">
+            <span style="font-size:24px;">👤</span>
+            <div><strong>角色页</strong><br><span style="color:var(--muted);font-size:13px;">技能树 · 能力标签 · 任务动态</span></div>
+          </a>
+        </div>
         <div class="doc-shell">
           <aside class="doc-list" id="doc-list"></aside>
           <article class="doc-reader markdown" id="doc-reader"></article>
@@ -190,6 +176,15 @@
           <label>
             领域
             <input id="edit-area" maxlength="40" />
+          </label>
+          <label>
+            类型
+            <select id="edit-type">
+              <option value="personal">个人</option>
+              <option value="agent">Agent</option>
+              <option value="review">评审</option>
+              <option value="discuss">讨论</option>
+            </select>
           </label>
           <label>
             标签

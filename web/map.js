@@ -244,6 +244,46 @@ function renderMap() {
   renderAgents();
 }
 
+async function initMapSkillTree() {
+  const skillTreeContainer = document.getElementById("skill-tree");
+  if (!skillTreeContainer) return; // skill tree section not present
+
+  const [character, skillTree, state, historyResult] = await Promise.all([
+    api("/api/character").catch(() => ({})),
+    api("/api/skill-tree").catch(() => ({ lines: [], skills: [], kpis: [], levelLegend: {} })),
+    api("/api/state").catch(() => ({ tasks: [] })),
+    api("/api/history").catch(() => ({ tasks: [] })),
+  ]);
+
+  characterState.character = character;
+  characterState.state = state;
+  characterState.history = historyResult;
+  characterState.skillTree = skillTree || { lines: [], skills: [], kpis: [], levelLegend: {} };
+  characterState.activeLineId = skillLines()[0]?.id || "";
+
+  renderSkillKpis();
+  renderSkillTabs();
+  renderSkillTree();
+
+  document.getElementById("skill-tree-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-line]");
+    if (!button) return;
+    characterState.activeLineId = button.dataset.line;
+    characterState.selectedSkillId = "";
+    renderSkillTabs();
+    renderSkillTree();
+  });
+
+  document.getElementById("skill-tree").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-skill]");
+    if (!button) return;
+    characterState.selectedSkillId = button.dataset.skill;
+    renderSkillTree();
+  });
+
+  window.addEventListener("resize", drawSkillLinks);
+}
+
 async function initMap() {
   setText("map-url", window.location.origin + "/map");
   const [capabilities, agents, roadmap] = await Promise.all([api("/api/capabilities"), api("/api/agents-status"), api("/api/roadmap")]);
@@ -260,6 +300,9 @@ async function initMap() {
     renderCapabilityGrid();
     renderCapabilityDetail();
   });
+
+  // Initialize skill tree (from character.js)
+  await initMapSkillTree();
 }
 
 initMap().catch((error) => {

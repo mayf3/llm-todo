@@ -544,6 +544,9 @@ async function initCharacter() {
   window.addEventListener("resize", drawSkillLinks);
 }
 
-initCharacter().catch((error) => {
-  document.body.innerHTML = `<main class="fatal">启动失败：${escapeHtml(error.message)}</main>`;
-});
+// Only auto-init on character page
+if (document.getElementById("character-url")) {
+  initCharacter().catch((error) => {
+    document.body.innerHTML = `<main class="fatal">启动失败：${escapeHtml(error.message)}</main>`;
+  });
+}
