@@ -38,7 +38,9 @@
         </div>
         <div id="view-tabs" class="view-tabs" role="tablist" aria-label="任务视图">
           <button type="button" class="active" data-task-view="tasks">当前</button>
+          <button type="button" data-task-view="draft">📥 需求池</button>
           <button type="button" data-task-view="week">📅 本周计划</button>
+          <button type="button" data-task-view="gantt">📊 甘特图</button>
           <button type="button" data-task-view="history">历史</button>
         </div>
         <section id="task-panel">
@@ -75,6 +77,52 @@
             <div class="week-progress" id="week-progress"></div>
           </div>
           <div id="week-grid" class="week-grid"></div>
+        </section>
+        <section id="draft-panel" hidden>
+          <div class="draft-header">
+            <div class="draft-title-row">
+              <h2>📥 需求池</h2>
+              <span id="draft-stats" class="draft-stats-badge"></span>
+            </div>
+            <div class="draft-tools">
+              <input id="draft-search" placeholder="搜索需求标题" aria-label="搜索需求标题" />
+              <select id="draft-source-filter" aria-label="来源筛选"><option value="">全部来源</option></select>
+              <select id="draft-area-filter" aria-label="领域筛选"><option value="">全部领域</option></select>
+              <button type="button" id="draft-refresh" title="刷新">🔄</button>
+              <button type="button" id="draft-propose-btn" style="background:#1677ff;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;">➕ 提需求</button>
+            </div>
+          </div>
+          <div id="draft-batch-bar" class="batch-bar" hidden>
+            <span id="draft-batch-count">已选择 0 个</span>
+            <button type="button" id="draft-batch-approve">✅ 批量批准</button>
+            <button type="button" id="draft-batch-reject">❌ 批量拒绝</button>
+          </div>
+          <div id="draft-list" class="task-list"></div>
+        </section>
+        <section id="gantt-panel" hidden>
+          <div class="gantt-header">
+            <h2>📊 周视角甘特图</h2>
+            <div class="gantt-tools">
+              <button type="button" id="gantt-prev" title="上一周">◀</button>
+              <span id="gantt-week-label"></span>
+              <button type="button" id="gantt-next" title="下一周">▶</button>
+              <button type="button" id="gantt-today" title="回到本周">今天</button>
+            </div>
+          </div>
+          <div class="gantt-legend">
+            <span class="gantt-legend-item priority-high">🔴 高</span>
+            <span class="gantt-legend-item priority-medium">🟡 中</span>
+            <span class="gantt-legend-item priority-low">⚪ 低</span>
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#1677ff"></span> 个人</span>
+            <span class="gantt-type-dot" style="background:#52c41a"></span> Agent
+            <span class="gantt-type-dot" style="background:#fa8c16"></span> 审阅
+            <span class="gantt-type-dot" style="background:#722ed1"></span> 讨论
+          </div>
+          <div id="gantt-grid" class="gantt-grid">
+            <div class="gantt-head-row" id="gantt-head-row"></div>
+            <div class="gantt-body" id="gantt-body"></div>
+          </div>
+          <p class="gantt-empty" id="gantt-empty" hidden>本周没有到期任务。← 上一周 / → 下一周</p>
         </section>
       </section>
 
@@ -126,6 +174,55 @@
 
     <div id="task-modal" class="modal-backdrop" hidden>
       <form id="task-edit-form" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="task-edit-title">
+
+    <!-- 需求池：提需求弹窗 -->
+    <div id="propose-modal" class="modal-backdrop" hidden>
+      <form id="propose-form" class="modal-panel" role="dialog" aria-modal="true">
+        <h2>➕ 提交新需求</h2>
+        <div class="field"><label>标题 *</label><input id="propose-title" required placeholder="需求标题" /></div>
+        <div class="field"><label>描述</label><textarea id="propose-desc" rows="3" placeholder="详细描述（可选）"></textarea></div>
+        <div class="filter-grid">
+          <div class="field"><label>优先级</label><select id="propose-priority"><option value="medium">中</option><option value="high">高</option><option value="low">低</option></select></div>
+          <div class="field"><label>领域</label><select id="propose-area"><option value="">--</option><option value="system">系统</option><option value="life">生活</option><option value="learning">学习</option><option value="work">工作</option></select></div>
+          <div class="field"><label>来源</label><input id="propose-source" placeholder="如: agent-xxx" /></div>
+          <div class="field"><label>标签</label><input id="propose-tags" placeholder="用逗号分隔" /></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="propose-cancel">取消</button>
+          <button type="submit" style="background:#1677ff;color:#fff;border:none;border-radius:6px;padding:6px 20px;cursor:pointer;">提交</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 需求池：审批弹窗 -->
+    <div id="approve-modal" class="modal-backdrop" hidden>
+      <form id="approve-form" class="modal-panel" role="dialog" aria-modal="true">
+        <h2 id="approve-modal-title">✅ 批准需求</h2>
+        <input type="hidden" id="approve-task-id" />
+        <div class="field"><label>优先级</label><select id="approve-priority"><option value="">保持不变</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select></div>
+        <div class="field"><label>领域</label><select id="approve-area"><option value="">保持不变</option><option value="system">系统</option><option value="life">生活</option><option value="learning">学习</option><option value="work">工作</option></select></div>
+        <div class="field"><label>执行人</label><input id="approve-assignee" placeholder="执行人（可选）" /></div>
+        <div class="modal-actions">
+          <button type="button" id="approve-cancel">取消</button>
+          <button type="submit" style="background:#52c41a;color:#fff;border:none;border-radius:6px;padding:6px 20px;cursor:pointer;">确认批准</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 需求池：拒绝弹窗 -->
+    <div id="reject-modal" class="modal-backdrop" hidden>
+      <form id="reject-form" class="modal-panel" role="dialog" aria-modal="true">
+        <h2>❌ 拒绝需求</h2>
+        <input type="hidden" id="reject-task-id" />
+        <div class="field"><label>拒绝原因</label><textarea id="reject-reason" rows="2" placeholder="可选填写拒绝原因"></textarea></div>
+        <div class="modal-actions">
+          <button type="button" id="reject-cancel">取消</button>
+          <button type="submit" style="background:#ff4d4f;color:#fff;border:none;border-radius:6px;padding:6px 20px;cursor:pointer;">确认拒绝</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="task-modal" class="modal-backdrop" hidden>
         <div class="modal-head">
           <div>
             <h2 id="task-edit-title">编辑任务</h2>
