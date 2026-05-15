@@ -46,7 +46,7 @@ OPENAI_COMPAT_API_KEY = os.environ.get("OPENAI_COMPAT_API_KEY", os.environ.get("
 OPENAI_COMPAT_BASE_URL = os.environ.get("OPENAI_COMPAT_BASE_URL", "https://api.deepseek.com/v1")
 OPENAI_COMPAT_MODEL = os.environ.get("OPENAI_COMPAT_MODEL", "deepseek-chat")
 
-GLM_API_KEY = os.environ.get("GLM_API_KEY", "73a397915e3646f9ab9d9ed7cfd04611.CXQiVkPOEqkuTe1G")
+GLM_API_KEY = os.environ.get("GLM_API_KEY", "")
 GLM_BASE_URL = os.environ.get("GLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
 GLM_MODEL = os.environ.get("GLM_MODEL", "glm-4-flash")
 
@@ -65,8 +65,9 @@ CONTENT_TYPES = {
 HORIZON_ORDER = ["today", "week", "month", "quarter", "year", "decade", "lifetime"]
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 REPEAT_OPTIONS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
-CURRENT_STATUSES = {"active", "waiting"}
-ARCHIVE_STATUSES = {"done", "dropped"}
+DRAFT_STATUSES = {"draft"}
+CURRENT_STATUSES = {"active", "waiting"} | DRAFT_STATUSES
+ARCHIVE_STATUSES = {"done", "dropped", "archived"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
 TASK_TYPES = {"personal", "agent", "review", "discuss"}
 TASK_SUB_STATUSES = {"pending", "in_progress", "submitted"}
@@ -330,6 +331,9 @@ def normalize_task(task: dict, default_status: str = "active") -> dict:
         "nextAction": clean_text(task.get("nextAction"), 220),
         "notes": clean_text(task.get("notes"), 500),
         "repeat": normalize_repeat(task.get("repeat")),
+        "layer": clean_text(task.get("layer"), 40),
+        "source": clean_text(task.get("source"), 120, ""),
+        "sourceType": str(task.get("sourceType", "agent")) if task.get("sourceType") in {"agent", "user", "system", "import"} else "agent",
         "created": clean_text(task.get("created"), 20, today),
         "updated": clean_text(task.get("updated"), 20, today),
     }
@@ -588,8 +592,11 @@ def verify_agent(name: object, token: object) -> dict | None:
     if not clean_name or not clean_token:
         return None
     for agent in load_agents()["agents"]:
-        if agent.get("name") == clean_name and hmac.compare_digest(str(agent.get("token", "")), clean_token):
-            return {"id": agent["id"], "name": agent["name"]}
+        agent_token = str(agent.get("token", ""))
+        if hmac.compare_digest(agent_token, clean_token):
+            # Match by token first, then verify name matches either id or name
+            if agent.get("name") == clean_name or agent.get("id") == clean_name:
+                return {"id": agent["id"], "name": agent["name"]}
     return None
 
 
@@ -1548,7 +1555,7 @@ def task_from_payload(payload: dict) -> dict:
     return {
         "id": new_task_id(),
         "title": title,
-        "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped"} else "active",
+        "status": str(payload.get("status", "active")) if payload.get("status") in {"active", "waiting", "done", "dropped", "draft", "archived"} else "active",
         "type": normalize_task_type(payload.get("type")),
         "assignee": clean_text(payload.get("assignee"), 80),
         "subStatus": normalize_sub_status(payload.get("subStatus")),
@@ -1560,8 +1567,113 @@ def task_from_payload(payload: dict) -> dict:
         "nextAction": str(payload.get("nextAction", "")).strip()[:220],
         "notes": str(payload.get("notes", "")).strip()[:500],
         "repeat": normalize_repeat(payload.get("repeat")),
+        "source": str(payload.get("source", "")).strip()[:120],
+        "sourceType": str(payload.get("sourceType", "agent")).strip() if payload.get("sourceType") in {"agent", "user", "system", "import"} else "agent",
         "created": today,
         "updated": today,
+    }
+
+
+def propose_task(payload: dict) -> dict:
+    """Agent 提需求，创建 draft 任务"""
+    payload["status"] = "draft"
+    payload.setdefault("sourceType", "agent")
+    task = task_from_payload(payload)
+    tasks = load_tasks()
+    tasks.append(task)
+    save_tasks(tasks)
+    append_log(f"新需求提交：{task['title']}（来源：{task.get('source', 'unknown')}）")
+    return {"task": task, "message": "需求已提交到需求池，等待审批"}
+
+
+def approve_task(task_id: str, overrides: dict | None = None) -> dict:
+    """审批通过 draft 任务"""
+    tasks = load_tasks()
+    for task in tasks:
+        if task.get("id") != task_id:
+            continue
+        if task.get("status") != "draft":
+            raise ValueError(f"任务状态不是 draft（当前: {task['status']}）")
+        task["status"] = "active"
+        task["updated"] = str(datetime.now().date())
+        if overrides:
+            for key in ("priority", "horizon", "assignee", "area", "tags"):
+                if key in overrides:
+                    if key == "tags":
+                        task[key] = normalize_tags(overrides[key])
+                    elif key == "horizon" and overrides[key] in HORIZON_ORDER:
+                        task[key] = overrides[key]
+                    elif key == "priority" and overrides[key] in {"high", "medium", "low"}:
+                        task[key] = overrides[key]
+                    else:
+                        task[key] = overrides[key]
+        save_tasks(tasks)
+        append_log(f"需求批准：{task['title']}")
+        return {"task": task, "message": "需求已批准并激活"}
+    raise ValueError("task not found")
+
+
+def reject_task(task_id: str, reason: str = "") -> dict:
+    """拒绝 draft 任务"""
+    tasks = load_tasks()
+    for task in tasks:
+        if task.get("id") != task_id:
+            continue
+        if task.get("status") != "draft":
+            raise ValueError(f"任务状态不是 draft（当前: {task['status']}）")
+        task["status"] = "archived"
+        task["updated"] = str(datetime.now().date())
+        if reason:
+            task["notes"] = f"{task.get('notes', '')}\n[拒绝原因]: {reason}".strip()
+        save_tasks(tasks)
+        append_log(f"需求拒绝：{task['title']}")
+        return {"task": task, "message": "需求已拒绝"}
+    raise ValueError("task not found")
+
+
+def batch_approve_tasks(payload: dict) -> dict:
+    """批量审批 draft 任务"""
+    task_ids = payload.get("taskIds", [])
+    action = payload.get("action", "approve")
+    overrides = payload.get("overrides")
+    results = {"approved": [], "rejected": [], "errors": []}
+    for tid in task_ids:
+        try:
+            if action == "approve":
+                result = approve_task(tid, overrides)
+                results["approved"].append(result["task"]["id"])
+            elif action == "reject":
+                result = reject_task(tid, payload.get("reason", ""))
+                results["rejected"].append(result["task"]["id"])
+        except Exception as exc:
+            results["errors"].append({"id": tid, "error": str(exc)})
+    return results
+
+
+def draft_stats() -> dict:
+    """需求池统计"""
+    tasks = load_tasks()
+    drafts = [t for t in tasks if t.get("status") == "draft"]
+    by_source: dict[str, int] = {}
+    by_area: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+    oldest = ""
+    for d in drafts:
+        src = d.get("source") or "unknown"
+        by_source[src] = by_source.get(src, 0) + 1
+        area = d.get("area", "unknown")
+        by_area[area] = by_area.get(area, 0) + 1
+        pri = d.get("priority", "unknown")
+        by_priority[pri] = by_priority.get(pri, 0) + 1
+        created = d.get("created", "")
+        if created and (not oldest or created < oldest):
+            oldest = created
+    return {
+        "total": len(drafts),
+        "bySource": by_source,
+        "byArea": by_area,
+        "byPriority": by_priority,
+        "oldest": oldest or None,
     }
 
 
@@ -1595,9 +1707,25 @@ def update_task(payload: dict) -> dict:
     if not updated:
         raise ValueError("task not found")
 
-    for key in ("title", "nextAction", "notes", "due"):
+    for key in ("title", "nextAction", "notes"):
         if key in payload:
             updated[key] = str(payload.get(key, "")).strip()
+    # Agent snooze: 最多允许往后推 SNOOZE_MAX_DAYS 天
+    if "due" in payload:
+        new_due = str(payload.get("due", "")).strip()
+        if new_due:
+            try:
+                due_date = datetime.fromisoformat(new_due).date()
+                current_due = updated.get("due", "")
+                current_date = datetime.fromisoformat(current_due).date() if current_due else datetime.now().date()
+                today_date = datetime.now().date()
+                # 不允许推到超过今天 + SNOOZE_MAX_DAYS
+                max_date = today_date + timedelta(days=int(os.environ.get("SNOOZE_MAX_DAYS", "2")))
+                if due_date > max_date:
+                    new_due = max_date.isoformat()
+            except (ValueError, TypeError):
+                pass
+        updated["due"] = new_due
     if "area" in payload:
         updated["area"] = normalize_area(payload.get("area"), updated.get("area", "life"))
     if "tags" in payload:
@@ -1616,6 +1744,8 @@ def update_task(payload: dict) -> dict:
         updated["priority"] = payload["priority"]
     if "repeat" in payload:
         updated["repeat"] = normalize_repeat(payload.get("repeat"))
+    if "layer" in payload:
+        updated["layer"] = str(payload["layer"])
     updated["updated"] = today
 
     with data_change("update-task"):
@@ -1634,8 +1764,11 @@ def update_task(payload: dict) -> dict:
 
 
 def tasks_for_agent(agent_info: dict) -> list[dict]:
-    name = str(agent_info.get("name", ""))
-    return sorted_tasks([task for task in load_tasks() if task.get("assignee") == name])
+    agent_id = str(agent_info.get("id", ""))
+    agent_name = str(agent_info.get("name", ""))
+    # Match by agent id OR display name (both should work)
+    return sorted_tasks([task for task in load_tasks()
+                         if task.get("assignee") in (agent_id, agent_name)])
 
 
 def update_agent_task_sub_status(task_id: str, agent_info: dict, payload: dict) -> tuple[dict, int]:
@@ -2699,7 +2832,27 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/stats":
                 self.send_json(stats())
             elif path == "/api/tasks":
-                self.send_json({"tasks": sorted_tasks(load_tasks())})
+                status_filter = query.get("status", [None])[0]
+                all_tasks = sorted_tasks(load_tasks())
+                if status_filter == "all":
+                    if not self.require_admin():
+                        return
+                    filtered = all_tasks
+                elif status_filter == "draft":
+                    filtered = [t for t in all_tasks if t.get("status") == "draft"]
+                elif status_filter:
+                    filtered = [t for t in all_tasks if t.get("status") == status_filter]
+                else:
+                    filtered = [t for t in all_tasks if t.get("status") != "draft"]
+                source_filter = query.get("source", [None])[0]
+                if source_filter:
+                    filtered = [t for t in filtered if t.get("source") == source_filter]
+                area_filter = query.get("area", [None])[0]
+                if area_filter:
+                    filtered = [t for t in filtered if t.get("area") == area_filter]
+                self.send_json({"tasks": filtered})
+            elif path == "/api/tasks/draft-stats":
+                self.send_json(draft_stats())
             elif path == "/api/tasks/mine":
                 if not self.require_agent():
                     return
@@ -2761,6 +2914,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(dispatch_chat(payload))
             elif path == "/api/chat/stream":
                 self.send_sse_stream(dispatch_stream_chat(payload))
+            elif path == "/api/tasks/propose":
+                if not self.require_agent() and not self.is_admin:
+                    return
+                self.send_json(propose_task(payload))
+            elif path == "/api/tasks/batch-approve":
+                if not self.require_admin():
+                    return
+                self.send_json(batch_approve_tasks(payload))
             elif path == "/api/tasks/create":
                 self.send_json(create_task(payload))
             elif path == "/api/tasks/update":
@@ -2825,15 +2986,26 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             payload = self.read_json_body()
-            task_match = re.fullmatch(r"/api/tasks/([^/]+)", path)
-            if task_match:
-                if not self.require_agent():
+            task_approve_match = re.fullmatch(r"/api/tasks/([^/]+)/(approve|reject)", path)
+            if task_approve_match:
+                if not self.require_admin():
                     return
-                task_id = urllib.parse.unquote(task_match.group(1))
-                result, status = update_agent_task_sub_status(task_id, self.agent_info, payload)
-                self.send_json(result, status)
+                task_id = urllib.parse.unquote(task_approve_match.group(1))
+                action = task_approve_match.group(2)
+                if action == "approve":
+                    self.send_json(approve_task(task_id, payload))
+                else:
+                    self.send_json(reject_task(task_id, payload.get("reason", "")))
             else:
-                self.send_error(404)
+                task_match = re.fullmatch(r"/api/tasks/([^/]+)", path)
+                if task_match:
+                    if not self.require_agent():
+                        return
+                    task_id = urllib.parse.unquote(task_match.group(1))
+                    result, status = update_agent_task_sub_status(task_id, self.agent_info, payload)
+                    self.send_json(result, status)
+                else:
+                    self.send_error(404)
         except Exception as exc:
             self.send_json({"error": str(exc)}, 500)
 
