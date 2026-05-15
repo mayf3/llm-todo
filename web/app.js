@@ -3,10 +3,13 @@ let historyState = { tasks: [] };
 let activeDoc = "todo/index.md";
 let chatMessages = [];
 let activeView = "tasks";
+let ganttWeekOffset = 0;
 let activeIndexTab = "tasks";
 let taskGroupCollapsed = { now: false, week: false, future: false };
+let draftState = { tasks: [], stats: null };
+let draftSelectedIds = new Set();
 
-const statusLabels = { active: "进行中", waiting: "等待中", done: "已完成", dropped: "已放弃" };
+const statusLabels = { active: "进行中", waiting: "等待中", done: "已完成", dropped: "已放弃", draft: "需求池", archived: "已归档" };
 const horizonLabels = { today: "今天", week: "本周", month: "本月", quarter: "季度", year: "年度", decade: "十年", lifetime: "人生" };
 const areaLabels = { system: "系统", life: "生活", learning: "学习", work: "工作" };
 const priorityLabels = { high: "高", medium: "中", low: "低" };
@@ -184,8 +187,12 @@ function renderViewTabs() {
   document.getElementById("task-panel").hidden = activeView !== "tasks";
   document.getElementById("history-panel").hidden = activeView !== "history";
   document.getElementById("week-panel").hidden = activeView !== "week";
+  document.getElementById("gantt-panel").hidden = activeView !== "gantt";
+  document.getElementById("draft-panel").hidden = activeView !== "draft";
   document.getElementById("status-filter").hidden = activeView !== "tasks";
   if (activeView === "week") renderWeekPlan();
+  if (activeView === "gantt") renderGantt();
+  if (activeView === "draft") loadAndRenderDraft();
 }
 
 // ===== Week Plan =====
@@ -659,6 +666,302 @@ async function updateTaskStatus(id, status) {
   renderDocs();
 }
 
+// ===== Gantt Chart =====
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function shortWeekDay(d) {
+  const days = ["一", "二", "三", "四", "五", "六", "日"];
+  return days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+}
+
+// ===== Draft Pool (需求池) =====
+
+async function loadDraftTasks() {
+  const params = new URLSearchParams({ status: "draft" });
+  const searchVal = document.getElementById("draft-search").value.trim();
+  if (searchVal) params.set("search", searchVal);
+  const sourceVal = document.getElementById("draft-source-filter").value;
+  if (sourceVal) params.set("source", sourceVal);
+  const areaVal = document.getElementById("draft-area-filter").value;
+  if (areaVal) params.set("area", areaVal);
+  const [tasksRes, statsRes] = await Promise.all([
+    api("/api/tasks?" + params.toString()),
+    api("/api/tasks/draft-stats"),
+  ]);
+  draftState.tasks = tasksRes.tasks || [];
+  draftState.stats = statsRes;
+  return draftState;
+}
+
+async function loadAndRenderDraft() {
+  try {
+    await loadDraftTasks();
+  } catch (e) { console.warn("draft load error", e); }
+  renderDraftStats();
+  renderDraftFilters();
+  renderDraftList();
+  renderDraftBatchBar();
+}
+
+function renderDraftStats() {
+  const el = document.getElementById("draft-stats");
+  const total = draftState.stats?.total || 0;
+  el.textContent = total > 0 ? `${total} 待审批` : "无待审批";
+  el.style.background = total > 0 ? "#1677ff" : "#d9d9d9";
+  el.style.color = total > 0 ? "#fff" : "#999";
+}
+
+function renderDraftFilters() {
+  const stats = draftState.stats;
+  if (!stats) return;
+  const sourceSelect = document.getElementById("draft-source-filter");
+  const currentSource = sourceSelect.value;
+  const sources = Object.keys(stats.bySource || {});
+  sourceSelect.innerHTML = '<option value="">全部来源</option>' +
+    sources.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${stats.bySource[s]})</option>`).join("");
+  if (sources.includes(currentSource)) sourceSelect.value = currentSource;
+
+  const areaSelect = document.getElementById("draft-area-filter");
+  const currentArea = areaSelect.value;
+  const areas = Object.keys(stats.byArea || {});
+  areaSelect.innerHTML = '<option value="">全部领域</option>' +
+    areas.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(areaLabels[a] || a)} (${stats.byArea[a]})</option>`).join("");
+  if (areas.includes(currentArea)) areaSelect.value = currentArea;
+}
+
+function renderDraftList() {
+  const container = document.getElementById("draft-list");
+  const tasks = draftState.tasks;
+  if (!tasks.length) {
+    container.innerHTML = '<p class="empty" style="text-align:center;color:var(--ink-light);padding:24px;">✨ 需求池为空</p>';
+    return;
+  }
+  container.innerHTML = tasks.map(task => {
+    const sel = draftSelectedIds.has(task.id);
+    const pri = priorityMarks[task.priority] || "⚪";
+    const area = task.area ? (areaLabels[task.area] || task.area) : "";
+    const source = task.source || "";
+    const tags = (task.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("");
+    const created = task.created || "";
+    return `<div class="draft-card ${sel ? "selected" : ""}" data-draft-id="${escapeAttr(task.id)}">
+      <input type="checkbox" class="draft-checkbox" data-draft-check="${escapeAttr(task.id)}" ${sel ? "checked" : ""} />
+      <div class="draft-card-title">${pri} ${escapeHtml(task.title)}</div>
+      <div class="draft-card-meta">
+        ${area ? `<span class="tag">${escapeHtml(area)}</span>` : ""}
+        ${source ? `<span class="tag">来源: ${escapeHtml(source)}</span>` : ""}
+        ${tags}
+        ${created ? `<span>${escapeHtml(created)}</span>` : ""}
+      </div>
+      ${task.description ? `<div style="font-size:0.82rem;color:var(--ink-light);margin-bottom:6px;">${escapeHtml(task.description).slice(0, 120)}</div>` : ""}
+      <div class="draft-card-actions">
+        <button type="button" class="btn-approve" data-action="draft-approve" data-id="${escapeAttr(task.id)}">✅ 批准</button>
+        <button type="button" class="btn-reject" data-action="draft-reject" data-id="${escapeAttr(task.id)}">❌ 拒绝</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderDraftBatchBar() {
+  const bar = document.getElementById("draft-batch-bar");
+  const countEl = document.getElementById("draft-batch-count");
+  const n = draftSelectedIds.size;
+  bar.hidden = n === 0;
+  countEl.textContent = `已选择 ${n} 个`;
+}
+
+function escapeAttr(v) { return String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+function showProposeModal() { document.getElementById("propose-modal").hidden = false; }
+function hideProposeModal() { document.getElementById("propose-modal").hidden = true; document.getElementById("propose-form").reset(); }
+function showApproveModal(taskId) { document.getElementById("approve-task-id").value = taskId; document.getElementById("approve-modal").hidden = false; }
+function hideApproveModal() { document.getElementById("approve-modal").hidden = false; document.getElementById("approve-form").reset(); document.getElementById("approve-modal").hidden = true; }
+function showRejectModal(taskId) { document.getElementById("reject-task-id").value = taskId; document.getElementById("reject-modal").hidden = false; }
+function hideRejectModal() { document.getElementById("reject-modal").hidden = true; document.getElementById("reject-form").reset(); }
+
+async function submitPropose(e) {
+  e.preventDefault();
+  const title = document.getElementById("propose-title").value.trim();
+  if (!title) return;
+  const body = { title };
+  const desc = document.getElementById("propose-desc").value.trim();
+  if (desc) body.description = desc;
+  const pri = document.getElementById("propose-priority").value;
+  if (pri) body.priority = pri;
+  const area = document.getElementById("propose-area").value;
+  if (area) body.area = area;
+  const source = document.getElementById("propose-source").value.trim();
+  if (source) body.source = source;
+  const tags = document.getElementById("propose-tags").value.trim();
+  if (tags) body.tags = tags.split(",").map(t => t.trim()).filter(Boolean);
+  try {
+    await api("/api/tasks/propose", { method: "POST", body: JSON.stringify(body) });
+    hideProposeModal();
+    await loadAndRenderDraft();
+  } catch (err) { alert("提交失败: " + err.message); }
+}
+
+async function submitApprove(e) {
+  e.preventDefault();
+  const taskId = document.getElementById("approve-task-id").value;
+  const overrides = {};
+  const pri = document.getElementById("approve-priority").value;
+  if (pri) overrides.priority = pri;
+  const area = document.getElementById("approve-area").value;
+  if (area) overrides.area = area;
+  const assignee = document.getElementById("approve-assignee").value.trim();
+  if (assignee) overrides.assignee = assignee;
+  try {
+    await api(`/api/tasks/${encodeURIComponent(taskId)}/approve`, { method: "PATCH", body: JSON.stringify(overrides) });
+    hideApproveModal();
+    await loadAndRenderDraft();
+    await refresh();
+  } catch (err) { alert("批准失败: " + err.message); }
+}
+
+async function submitReject(e) {
+  e.preventDefault();
+  const taskId = document.getElementById("reject-task-id").value;
+  const reason = document.getElementById("reject-reason").value.trim();
+  try {
+    await api(`/api/tasks/${encodeURIComponent(taskId)}/reject`, { method: "PATCH", body: JSON.stringify({ reason }) });
+    hideRejectModal();
+    await loadAndRenderDraft();
+  } catch (err) { alert("拒绝失败: " + err.message); }
+}
+
+async function batchApproveDrafts() {
+  if (draftSelectedIds.size === 0) return;
+  if (!confirm(`确认批量批准 ${draftSelectedIds.size} 个需求？`)) return;
+  try {
+    await api("/api/tasks/batch-approve", { method: "POST", body: JSON.stringify({ taskIds: [...draftSelectedIds], action: "approve" }) });
+    draftSelectedIds.clear();
+    await loadAndRenderDraft();
+    await refresh();
+  } catch (err) { alert("批量批准失败: " + err.message); }
+}
+
+async function batchRejectDrafts() {
+  if (draftSelectedIds.size === 0) return;
+  const reason = prompt(`批量拒绝 ${draftSelectedIds.size} 个需求，可选填原因：`) || "";
+  try {
+    await api("/api/tasks/batch-approve", { method: "POST", body: JSON.stringify({ taskIds: [...draftSelectedIds], action: "reject", reason }) });
+    draftSelectedIds.clear();
+    await loadAndRenderDraft();
+  } catch (err) { alert("批量拒绝失败: " + err.message); }
+}
+
+function renderGantt() {
+  const monday = getMonday(new Date());
+  monday.setDate(monday.getDate() + ganttWeekOffset * 7);
+  const sunday = new Date(monday);
+  sunday.setDate(sunday.getDate() + 6);
+
+  document.getElementById("gantt-week-label").textContent =
+    `${formatDate(monday)} ~ ${formatDate(sunday)}`;
+
+  // Build 7-day columns
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    days.push({
+      date: formatDate(d),
+      dayLabel: `周${shortWeekDay(d)}`,
+      isToday: formatDate(d) === formatDate(new Date()),
+      dayOfWeek: d.getDay(),
+    });
+  }
+
+  // Render header row
+  document.getElementById("gantt-head-row").innerHTML = days
+    .map((d) => `<div class="gantt-head-cell ${d.isToday ? "today" : ""}">${d.date}<br><span>${d.dayLabel}</span></div>`)
+    .join("");
+
+  // Collect tasks with due dates in range
+  const allTasks = (state?.tasks || []).filter((t) => t.status === "active" && t.due);
+  const inRange = allTasks.filter((t) => {
+    const due = t.due;
+    return due >= formatDate(monday) && due <= formatDate(sunday);
+  });
+
+  // Sort by priority (high first), then by due
+  inRange.sort((a, b) => {
+    const pOrder = { high: 0, medium: 1, low: 2 };
+    const pa = pOrder[a.priority] ?? 1;
+    const pb = pOrder[b.priority] ?? 1;
+    if (pa !== pb) return pa - pb;
+    return (a.due || "").localeCompare(b.due || "");
+  });
+
+  // Empty state
+  if (inRange.length === 0) {
+    document.getElementById("gantt-body").innerHTML = "";
+    document.getElementById("gantt-empty").hidden = false;
+    return;
+  }
+  document.getElementById("gantt-empty").hidden = true;
+
+  // Render task rows as bars
+  const priorityColors = { high: "#ff4d4f", medium: "#faad14", low: "#d9d9d9" };
+  const typeColors = window.typeColors || { personal: "#1677ff", agent: "#52c41a", review: "#fa8c16", discuss: "#722ed1" };
+  const typeLabels = window.typeLabels || { personal: "个人", agent: "Agent", review: "审阅", discuss: "讨论" };
+  const statusLabels = window.statusLabels || {};
+
+  const bodyHtml = inRange
+    .map((task) => {
+      const due = task.due || "";
+      const dayIndex = days.findIndex((d) => d.date === due);
+      const offset = dayIndex >= 0 ? dayIndex : 6; // clamp to saturday
+      const width = 1; // single day width
+      const barColor = priorityColors[task.priority] || "#1677ff";
+      const taskType = task.type || "personal";
+      const tColor = typeColors[taskType] || "#1677ff";
+      const tLabel = typeLabels[taskType] || taskType;
+      const pLabel = { high: "高", medium: "中", low: "低" }[task.priority] || "";
+
+      return `<div class="gantt-row" draggable="true" data-task-id="${escapeAttr(task.id)}" data-due="${escapeAttr(task.due)}">
+        <div class="gantt-row-label" title="${escapeHtml(task.title)}">
+          <span class="gantt-priority-badge" style="background:${barColor}20;color:${barColor};">${pLabel}</span>
+          <span class="gantt-type-badge" style="background:${tColor}15;color:${tColor};">${escapeHtml(tLabel)}</span>
+          <span class="gantt-title">${escapeHtml(task.title)}</span>
+        </div>
+        <div class="gantt-track" data-task-id="${escapeAttr(task.id)}">
+          <div class="gantt-bar" style="
+            left: ${offset * (100 / 7)}%;
+            width: ${width * (100 / 7)}%;
+            background: ${barColor};
+            opacity: 0.85;
+          " title="${escapeHtml(task.title)} · ${formatDate(monday)} ~ ${task.due}">
+            <span class="gantt-bar-label">${escapeHtml(task.title)}</span>
+          </div>
+          ${days
+            .map(
+              (d, di) =>
+                `<div class="gantt-day-slot" data-date="${d.date}" data-task-id="${escapeAttr(task.id)}" style="left:${di * (100 / 7)}%;width:${100 / 7}%"></div>`
+            )
+            .join("")}
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  document.getElementById("gantt-body").innerHTML = bodyHtml;
+}
+
 // ===== Task Detail Modal =====
 let editTaskId = null;
 
@@ -818,6 +1121,45 @@ async function init() {
     await updateTaskStatus(button.dataset.id, button.dataset.action);
   });
 
+  // ===== Draft Pool (需求池) Event Handlers =====
+  document.getElementById("draft-refresh")?.addEventListener("click", () => loadAndRenderDraft());
+  document.getElementById("draft-propose-btn")?.addEventListener("click", showProposeModal);
+  document.getElementById("propose-cancel")?.addEventListener("click", hideProposeModal);
+  document.getElementById("propose-form")?.addEventListener("submit", submitPropose);
+  document.getElementById("approve-cancel")?.addEventListener("click", hideApproveModal);
+  document.getElementById("approve-form")?.addEventListener("submit", submitApprove);
+  document.getElementById("reject-cancel")?.addEventListener("click", hideRejectModal);
+  document.getElementById("reject-form")?.addEventListener("submit", submitReject);
+  document.getElementById("draft-batch-approve")?.addEventListener("click", batchApproveDrafts);
+  document.getElementById("draft-batch-reject")?.addEventListener("click", batchRejectDrafts);
+  ["draft-search"].forEach((id) => {
+    const node = document.getElementById(id);
+    if (node) node.addEventListener("input", () => { clearTimeout(node._debounce); node._debounce = setTimeout(loadAndRenderDraft, 300); });
+  });
+  ["draft-source-filter", "draft-area-filter"].forEach((id) => {
+    const node = document.getElementById(id);
+    if (node) node.addEventListener("change", loadAndRenderDraft);
+  });
+  document.getElementById("draft-panel")?.addEventListener("click", (event) => {
+    const checkbox = event.target.closest("input[data-draft-check]");
+    if (checkbox) {
+      const id = checkbox.dataset.draftCheck;
+      if (checkbox.checked) draftSelectedIds.add(id); else draftSelectedIds.delete(id);
+      renderDraftList();
+      renderDraftBatchBar();
+      return;
+    }
+    const approveBtn = event.target.closest("button[data-action='draft-approve']");
+    if (approveBtn) { showApproveModal(approveBtn.dataset.id); return; }
+    const rejectBtn = event.target.closest("button[data-action='draft-reject']");
+    if (rejectBtn) { showRejectModal(rejectBtn.dataset.id); return; }
+  });
+  ["propose-modal", "approve-modal", "reject-modal"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", (e) => {
+      if (e.target.id === id) e.target.hidden = true;
+    });
+  });
+
   // Week panel action buttons
   document.getElementById("week-grid")?.addEventListener("click", async (event) => {
     // Open task detail on card click (if not a button action)
@@ -828,6 +1170,46 @@ async function init() {
       renderWeekPlan();
     } else if (item && item.dataset.taskId) {
       openTaskDetail(item.dataset.taskId);
+    }
+  });
+
+  // Gantt navigation
+  document.getElementById("gantt-prev")?.addEventListener("click", () => {
+    ganttWeekOffset--;
+    renderGantt();
+  });
+  document.getElementById("gantt-next")?.addEventListener("click", () => {
+    ganttWeekOffset++;
+    renderGantt();
+  });
+  document.getElementById("gantt-today")?.addEventListener("click", () => {
+    ganttWeekOffset = 0;
+    renderGantt();
+  });
+
+  // Gantt drag-drop to change due date
+  document.getElementById("gantt-body")?.addEventListener("dragstart", (event) => {
+    const row = event.target.closest(".gantt-row");
+    if (row) event.dataTransfer.setData("text/plain", row.dataset.taskId);
+  });
+  document.getElementById("gantt-body")?.addEventListener("dragover", (event) => {
+    event.preventDefault();
+  });
+  document.getElementById("gantt-body")?.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    const taskId = event.dataTransfer.getData("text/plain");
+    const slot = event.target.closest(".gantt-day-slot");
+    if (!taskId || !slot) return;
+    const newDue = slot.dataset.date;
+    try {
+      await api("/api/tasks/update", { method: "POST", body: JSON.stringify({ id: taskId, due: newDue }) });
+      ganttWeekOffset = 0;
+      const response = await api("/api/state");
+      state = response;
+      historyState = { tasks: response.history || [] };
+      renderGantt();
+    } catch (error) {
+      alert("更新日期失败: " + error.message);
     }
   });
 
