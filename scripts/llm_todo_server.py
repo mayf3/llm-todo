@@ -34,6 +34,7 @@ CAPABILITIES_PATH = DATA / "capabilities.json"
 AGENTS_PATH = DATA / "agents.json"
 ROADMAP_PATH = DATA / "roadmap.json"
 SKILL_TREE_PATH = DATA / "skill_tree.json"
+COMPILE_ARTIFACTS_PATH = DATA / "compile-artifacts.json"
 BACKUP_DIR = DATA / "backups"
 
 BASE_PATH = os.environ.get("LLM_TODO_BASE_PATH", "").rstrip("/")
@@ -71,7 +72,9 @@ ARCHIVE_STATUSES = {"done", "dropped", "archived"}
 TASK_STATUSES = CURRENT_STATUSES | ARCHIVE_STATUSES
 TASK_TYPES = {"personal", "agent", "review", "discuss"}
 TASK_SUB_STATUSES = {"pending", "in_progress", "submitted"}
-DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH}
+RELATION_TYPES = {"blocks", "blocked-by", "related", "duplicates", "conflicts-with"}
+RELATION_DIRECTIONS = {"in", "out"}
+DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH, COMPILE_ARTIFACTS_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
 
@@ -252,6 +255,43 @@ def normalize_sub_status(value: object) -> str:
     return sub_status if sub_status in TASK_SUB_STATUSES else "pending"
 
 
+def normalize_relations(value: object) -> list[dict]:
+    if not isinstance(value, list):
+        return []
+    relations = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in value:
+        if isinstance(item, dict):
+            relation_id = clean_text(item.get("id"), 80)
+            relation_type = str(item.get("type", "related")).strip()
+            direction = str(item.get("direction", "out")).strip()
+            reason = clean_text(item.get("reason"), 160)
+            source = clean_text(item.get("source"), 40)
+        else:
+            relation_id = clean_text(item, 80)
+            relation_type = "related"
+            direction = "out"
+            reason = ""
+            source = ""
+        if not relation_id:
+            continue
+        if relation_type not in RELATION_TYPES:
+            relation_type = "related"
+        if direction not in RELATION_DIRECTIONS:
+            direction = "out"
+        key = (relation_id, relation_type, direction)
+        if key in seen:
+            continue
+        relation = {"id": relation_id, "type": relation_type, "direction": direction}
+        if reason:
+            relation["reason"] = reason
+        if source:
+            relation["source"] = source
+        relations.append(relation)
+        seen.add(key)
+    return relations
+
+
 def parse_iso_date(value: object) -> date | None:
     text = str(value if value is not None else "").strip()[:10]
     if not text:
@@ -331,6 +371,7 @@ def normalize_task(task: dict, default_status: str = "active") -> dict:
         "nextAction": clean_text(task.get("nextAction"), 220),
         "notes": clean_text(task.get("notes"), 500),
         "repeat": normalize_repeat(task.get("repeat")),
+        "relations": normalize_relations(task.get("relations", []) or []),
         "layer": clean_text(task.get("layer"), 40),
         "source": clean_text(task.get("source"), 120, ""),
         "sourceType": str(task.get("sourceType", "agent")) if task.get("sourceType") in {"agent", "user", "system", "import"} else "agent",
@@ -1567,6 +1608,7 @@ def task_from_payload(payload: dict) -> dict:
         "nextAction": str(payload.get("nextAction", "")).strip()[:220],
         "notes": str(payload.get("notes", "")).strip()[:500],
         "repeat": normalize_repeat(payload.get("repeat")),
+        "relations": [],
         "source": str(payload.get("source", "")).strip()[:120],
         "sourceType": str(payload.get("sourceType", "agent")).strip() if payload.get("sourceType") in {"agent", "user", "system", "import"} else "agent",
         "created": today,
@@ -1583,6 +1625,7 @@ def propose_task(payload: dict) -> dict:
     tasks.append(task)
     save_tasks(tasks)
     append_log(f"新需求提交：{task['title']}（来源：{task.get('source', 'unknown')}）")
+    incremental_compile(task["id"])
     return {"task": task, "message": "需求已提交到需求池，等待审批"}
 
 
@@ -1677,12 +1720,350 @@ def draft_stats() -> dict:
     }
 
 
+def all_task_records(tasks: list[dict] | None = None, history: list[dict] | None = None) -> list[dict]:
+    current = tasks if tasks is not None else load_tasks()
+    archived = history if history is not None else load_history()
+    return list(current) + list(archived)
+
+
+def task_summary(task: dict | None) -> dict | None:
+    if not task:
+        return None
+    return {
+        "id": task.get("id", ""),
+        "title": task.get("title", ""),
+        "status": task.get("status", ""),
+        "type": task.get("type", "personal"),
+        "assignee": task.get("assignee", ""),
+        "horizon": task.get("horizon", ""),
+        "area": task.get("area", ""),
+        "priority": task.get("priority", ""),
+    }
+
+
+def find_task_record(task_id: str, tasks: list[dict], history: list[dict]) -> tuple[dict | None, str]:
+    for task in tasks:
+        if task.get("id") == task_id:
+            return task, "tasks"
+    for task in history:
+        if task.get("id") == task_id:
+            return task, "history"
+    return None, ""
+
+
+def task_blob(task: dict) -> str:
+    tags = " ".join(str(tag) for tag in task.get("tags", []))
+    parts = [task.get("title", ""), task.get("nextAction", ""), task.get("notes", ""), task.get("area", ""), tags]
+    return " ".join(str(part) for part in parts if part)
+
+
+def relation_terms(text: str) -> set[str]:
+    stops = {"任务", "需求", "开发", "配置", "新增", "完成", "流程", "功能", "页面", "系统", "平台", "验收", "agent"}
+    lowered = text.lower()
+    terms = set(re.findall(r"[a-z0-9][a-z0-9_-]{2,}", lowered))
+    for segment in re.findall(r"[\u4e00-\u9fff]{2,}", text):
+        if len(segment) <= 4:
+            terms.add(segment)
+        for index in range(len(segment) - 1):
+            terms.add(segment[index : index + 2])
+    return {term for term in terms if term not in stops and len(term) >= 2}
+
+
+def title_similarity(left: dict, right: dict) -> float:
+    left_terms = relation_terms(str(left.get("title", "")))
+    right_terms = relation_terms(str(right.get("title", "")))
+    if not left_terms or not right_terms:
+        return 0.0
+    return len(left_terms & right_terms) / len(left_terms | right_terms)
+
+
+def mentions_task(text: str, task: dict) -> bool:
+    lowered = text.lower()
+    task_id = str(task.get("id", "")).lower()
+    if task_id and task_id in lowered:
+        return True
+    suffix = task_id.rsplit("-", 1)[-1]
+    if len(suffix) >= 6 and suffix in lowered:
+        return True
+    title = str(task.get("title", "")).strip()
+    if len(title) >= 8 and title in text:
+        return True
+    title_terms = relation_terms(title)
+    if len(title_terms) < 2:
+        return False
+    hits = sum(1 for term in title_terms if term in lowered)
+    return hits >= min(3, max(2, len(title_terms) // 2))
+
+
+def keyword_relation_type(text: str) -> str:
+    lowered = text.lower()
+    if any(key in text for key in ["依赖", "基于", "完成后", "前置", "等待"]) or any(key in lowered for key in ["depends", "blocked by", "after "]):
+        return "blocked-by"
+    if any(key in text for key in ["阻塞", "解锁", "先完成", "先做"]) or "blocks" in lowered:
+        return "blocks"
+    return "related"
+
+
+def priorities_conflict(task: dict, other: dict, similarity: float) -> bool:
+    if task.get("area") != other.get("area"):
+        return False
+    priorities = {task.get("priority"), other.get("priority")}
+    if priorities == {"high"} and task.get("horizon") in {"today", "week"} and other.get("horizon") in {"today", "week"}:
+        return similarity >= 0.12
+    return priorities == {"high", "low"} and similarity >= 0.3
+
+
+def compile_relation(task_id: str, relation_type: str, reason: str) -> dict:
+    return {"id": task_id, "type": relation_type, "direction": "out", "source": "compile", "reason": reason}
+
+
+def merge_relations(*groups: object) -> list[dict]:
+    merged = []
+    seen: set[tuple[str, str, str]] = set()
+    for group in groups:
+        for relation in normalize_relations(group):
+            key = (relation["id"], relation["type"], relation["direction"])
+            if key in seen:
+                continue
+            merged.append(relation)
+            seen.add(key)
+    return merged
+
+
+def analyze_task_relationships(task: dict, tasks: list[dict] | None = None) -> list[dict]:
+    all_tasks = tasks if tasks is not None else all_task_records()
+    text = task_blob(task)
+    candidates: list[tuple[float, dict]] = []
+    for other in all_tasks:
+        if other.get("id") == task.get("id"):
+            continue
+        similarity = title_similarity(task, other)
+        relation_type = ""
+        reason = ""
+        score = 0.0
+        if mentions_task(text, other):
+            relation_type = keyword_relation_type(text)
+            reason = "任务文本命中关联对象"
+            score = 1.0 if relation_type in {"blocks", "blocked-by"} else 0.82
+        elif similarity >= 0.72:
+            relation_type = "duplicates"
+            reason = "标题高度相似"
+            score = 0.72
+        elif task.get("area") == other.get("area") and similarity >= 0.36:
+            relation_type = "related"
+            reason = "同领域且标题相似"
+            score = 0.5 + similarity
+        elif priorities_conflict(task, other, similarity):
+            relation_type = "conflicts-with"
+            reason = "同领域优先级可能冲突"
+            score = 0.42 + similarity
+        if relation_type:
+            candidates.append((score, compile_relation(str(other.get("id", "")), relation_type, reason)))
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return merge_relations([relation for _, relation in candidates])[:12]
+
+
+def compiled_task_relations(task: dict, all_tasks: list[dict]) -> list[dict]:
+    manual = [relation for relation in normalize_relations(task.get("relations", []) or []) if relation.get("source") != "compile"]
+    generated = analyze_task_relationships(task, all_tasks)
+    return merge_relations(manual, generated)
+
+
+def reverse_relation_type(relation_type: str) -> str:
+    return {"blocks": "blocked-by", "blocked-by": "blocks"}.get(relation_type, relation_type)
+
+
+def relation_with_task(relation: dict, lookup: dict[str, dict]) -> dict:
+    item = dict(relation)
+    item["task"] = task_summary(lookup.get(relation.get("id", "")))
+    return item
+
+
+def task_relation_chain(task_id: str, tasks: list[dict] | None = None, history: list[dict] | None = None) -> dict:
+    current = tasks if tasks is not None else load_tasks()
+    archived = history if history is not None else load_history()
+    task, _ = find_task_record(task_id, current, archived)
+    if not task:
+        raise ValueError("task not found")
+    all_tasks = all_task_records(current, archived)
+    lookup = {str(item.get("id", "")): item for item in all_tasks}
+    outgoing = [relation_with_task(relation, lookup) for relation in normalize_relations(task.get("relations", []) or [])]
+    incoming = []
+    for other in all_tasks:
+        if other.get("id") == task_id:
+            continue
+        for relation in normalize_relations(other.get("relations", []) or []):
+            if relation.get("id") != task_id:
+                continue
+            incoming_relation = dict(relation)
+            incoming_relation["id"] = other.get("id", "")
+            incoming_relation["type"] = reverse_relation_type(incoming_relation.get("type", "related"))
+            incoming_relation["direction"] = "in"
+            incoming_relation["task"] = task_summary(other)
+            incoming.append(incoming_relation)
+    return {"task": task_summary(task), "relations": outgoing + incoming, "outgoing": outgoing, "incoming": incoming, "count": len(outgoing) + len(incoming)}
+
+
+def manual_relations_from_payload(payload: dict) -> list[dict]:
+    source = payload.get("task") if isinstance(payload.get("task"), dict) else payload
+    raw_relations = source.get("relations", []) if isinstance(source, dict) else []
+    relations = []
+    for relation in normalize_relations(raw_relations or []):
+        relation["source"] = "manual"
+        relations.append(relation)
+    return relations
+
+
+def skill_match_score(task: dict, skill: dict) -> int:
+    blob = task_blob(task).lower()
+    score = 0
+    for keyword in skill.get("keywords", []):
+        text = str(keyword).strip().lower()
+        if text and text in blob:
+            score += 2
+    if task.get("area") in skill.get("areas", []):
+        score += 1
+    if str(skill.get("title", "")).lower() in blob:
+        score += 2
+    return score
+
+
+def analyze_task_skills(task: dict, skills: list[dict] | None = None) -> list[dict]:
+    skill_items = skills if skills is not None else skill_tree_payload()["skills"]
+    matches = []
+    for skill in skill_items:
+        score = skill_match_score(task, skill)
+        if score:
+            matches.append({"skill": skill.get("id", ""), "name": skill.get("title", skill.get("name", "")), "taskId": task.get("id", ""), "score": score})
+    return sorted(matches, key=lambda item: item["score"], reverse=True)[:5]
+
+
+def compile_skill_updates(tasks: list[dict], history: list[dict]) -> list[dict]:
+    skills = skill_tree_payload(tasks, history)["skills"]
+    refs: dict[str, dict] = {}
+    for task in all_task_records(tasks, history):
+        for match in analyze_task_skills(task, skills):
+            skill_id = match["skill"]
+            item = refs.setdefault(skill_id, {"skill": skill_id, "name": match["name"], "taskRefs": [], "score": 0})
+            item["taskRefs"].append(task.get("id", ""))
+            item["score"] += match["score"]
+    updates = []
+    for item in refs.values():
+        task_refs = list(dict.fromkeys(item["taskRefs"]))
+        updates.append(
+            {
+                "skill": item["skill"],
+                "name": item["name"],
+                "taskRefs": task_refs[:12],
+                "taskCount": len(task_refs),
+                "maturityDelta": round(min(0.5, item["score"] * 0.01), 2),
+            }
+        )
+    return sorted(updates, key=lambda item: (item["taskCount"], item["maturityDelta"]), reverse=True)[:20]
+
+
+def analyze_planning(tasks: list[dict] | None = None) -> dict:
+    current = [task for task in (tasks if tasks is not None else load_tasks()) if task.get("status") in CURRENT_STATUSES]
+    by_area: dict[str, int] = {}
+    for task in current:
+        area = task.get("area", "life")
+        by_area[area] = by_area.get(area, 0) + 1
+    alerts = []
+    total = len(current) or 1
+    for area, count in by_area.items():
+        if count >= 4 and count / total > 0.5:
+            alerts.append({"type": "focus", "area": area, "message": f"{area} 领域任务占比超过 50%"})
+    for task in current:
+        blob = task_blob(task)
+        if task.get("horizon") == "week" and any(key in blob for key in ["长期", "十年", "年度", "战略", "人生"]):
+            alerts.append({"type": "deviation", "taskId": task.get("id", ""), "area": task.get("area", ""), "message": "周任务中包含长期规划信号"})
+    return {"byArea": by_area, "alerts": alerts[:20]}
+
+
+def relation_count(tasks: list[dict], history: list[dict]) -> int:
+    return sum(len(normalize_relations(task.get("relations", []) or [])) for task in all_task_records(tasks, history))
+
+
+def compile_artifacts(tasks: list[dict], history: list[dict], full: bool) -> dict:
+    planning = analyze_planning(tasks)
+    payload = {
+        "taskCount": len(tasks) + len(history),
+        "relationCount": relation_count(tasks, history),
+        "skillUpdates": compile_skill_updates(tasks, history),
+        "planningAlerts": planning["alerts"],
+        "planning": planning,
+    }
+    key = "lastFullCompile" if full else "lastIncrementalCompile"
+    payload[key] = datetime.now().isoformat(timespec="seconds")
+    if not full:
+        current = read_json_object(COMPILE_ARTIFACTS_PATH, {})
+        if current.get("lastFullCompile"):
+            payload["lastFullCompile"] = current["lastFullCompile"]
+    return payload
+
+
+def write_compile_artifacts(payload: dict, label: str) -> None:
+    write_json_object(COMPILE_ARTIFACTS_PATH, payload, label)
+
+
+def incremental_compile(task_id: str) -> dict:
+    tasks = load_tasks()
+    history = load_history()
+    task, source = find_task_record(task_id, tasks, history)
+    if not task:
+        raise ValueError("task not found")
+    task["relations"] = compiled_task_relations(task, all_task_records(tasks, history))
+    task["updated"] = str(datetime.now().date())
+    artifacts = compile_artifacts(tasks, history, full=False)
+    with data_change("incremental-compile"):
+        if source == "history":
+            save_history(history)
+        else:
+            save_tasks(tasks)
+        write_compile_artifacts(artifacts, "incremental-compile")
+    return {"task": task, "relations": task_relation_chain(task_id), "artifacts": artifacts}
+
+
+def update_task_relations(task_id: str, payload: dict) -> dict:
+    tasks = load_tasks()
+    history = load_history()
+    task, source = find_task_record(task_id, tasks, history)
+    if not task:
+        raise ValueError("task not found")
+    task["relations"] = manual_relations_from_payload(payload)
+    task["updated"] = str(datetime.now().date())
+    with data_change("update-task-relations"):
+        if source == "history":
+            save_history(history)
+        else:
+            save_tasks(tasks)
+    result = incremental_compile(task_id)
+    append_log(f"更新任务关系：{result['task']['title']}（{result['relations']['count']} 条）")
+    return result
+
+
+def full_compile() -> dict:
+    tasks = load_tasks()
+    history = load_history()
+    all_tasks = all_task_records(tasks, history)
+    for task in all_tasks:
+        task["relations"] = compiled_task_relations(task, all_tasks)
+    artifacts = compile_artifacts(tasks, history, full=True)
+    with data_change("full-compile"):
+        save_tasks(tasks)
+        save_history(history)
+        write_compile_artifacts(artifacts, "full-compile")
+    append_log(f"全量编译完成：{artifacts['taskCount']} 个任务，{artifacts['relationCount']} 条关系")
+    return {"ok": True, "artifacts": artifacts, "state": state_payload()}
+
+
 def create_task(payload: dict) -> dict:
     task = task_from_payload(payload)
     tasks = load_tasks()
     tasks.append(task)
     save_tasks(tasks)
     append_log(f"新增任务：{task['title']}（手动）")
+    incremental_compile(task["id"])
     return {"task": task, "state": state_payload()}
 
 
@@ -1790,6 +2171,7 @@ def update_agent_task_sub_status(task_id: str, agent_info: dict, payload: dict) 
     found["updated"] = today
     save_tasks(tasks)
     append_log(f"Agent 更新任务子状态：{found['title']} → {sub_status}")
+    incremental_compile(task_id)
     return {"task": found, "tasks": tasks_for_agent(agent_info)}, 200
 
 
@@ -2812,6 +3194,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"error": "agent authorization required"}, 403)
         return False
 
+    def require_admin_or_agent(self) -> bool:
+        if self.is_admin or self.agent_info or not AUTH_TOKEN:
+            return True
+        self.send_json({"error": "admin or agent authorization required"}, 403)
+        return False
+
     def read_json_body(self) -> dict:
         size = int(self.headers.get("Content-Length", "0") or "0")
         payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
@@ -2824,6 +3212,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         query = urllib.parse.parse_qs(parsed.query)
         capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", path)
+        task_relations_match = re.fullmatch(r"/api/tasks/([^/]+)/relations", path)
         try:
             if path == "/api/health":
                 self.send_json({"ok": True, "root": str(ROOT), "stats": stats()})
@@ -2851,6 +3240,9 @@ class Handler(BaseHTTPRequestHandler):
                 if area_filter:
                     filtered = [t for t in filtered if t.get("area") == area_filter]
                 self.send_json({"tasks": filtered})
+            elif task_relations_match:
+                task_id = urllib.parse.unquote(task_relations_match.group(1))
+                self.send_json(task_relation_chain(task_id))
             elif path == "/api/tasks/draft-stats":
                 self.send_json(draft_stats())
             elif path == "/api/tasks/mine":
@@ -2930,6 +3322,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(search_tasks(payload))
             elif path == "/api/tasks/batch":
                 self.send_json(batch_tasks(payload))
+            elif path == "/api/compile/full":
+                if not self.require_admin():
+                    return
+                self.send_json(full_compile())
             elif path == "/api/agents":
                 if not self.require_admin():
                     return
@@ -2955,12 +3351,18 @@ class Handler(BaseHTTPRequestHandler):
         path = strip_base_path(parsed.path)
         if not self.authorized(path):
             return
+        task_relations_match = re.fullmatch(r"/api/tasks/([^/]+)/relations", path)
         capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", path)
         agent_match = re.fullmatch(r"/api/agents-status/([^/]+)", path)
         skill_match = re.fullmatch(r"/api/skill-tree/([^/]+)", path)
         try:
             payload = self.read_json_body()
-            if capability_match:
+            if task_relations_match:
+                if not self.require_admin_or_agent():
+                    return
+                task_id = urllib.parse.unquote(task_relations_match.group(1))
+                self.send_json(update_task_relations(task_id, payload))
+            elif capability_match:
                 domain_id = urllib.parse.unquote(capability_match.group(1))
                 domain = update_capability(domain_id, payload)
                 self.send_json({"domain": domain, "domains": capabilities_payload()["domains"]} if domain else {"error": "capability not found"}, 200 if domain else 404)
