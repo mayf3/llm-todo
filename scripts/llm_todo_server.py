@@ -35,6 +35,7 @@ AGENTS_PATH = DATA / "agents.json"
 ROADMAP_PATH = DATA / "roadmap.json"
 SKILL_TREE_PATH = DATA / "skill_tree.json"
 COMPILE_ARTIFACTS_PATH = DATA / "compile-artifacts.json"
+COMMENTS_PATH = DATA / "task-comments.json"
 BACKUP_DIR = DATA / "backups"
 
 BASE_PATH = os.environ.get("LLM_TODO_BASE_PATH", "").rstrip("/")
@@ -74,7 +75,9 @@ TASK_TYPES = {"personal", "agent", "review", "discuss"}
 TASK_SUB_STATUSES = {"pending", "in_progress", "submitted"}
 RELATION_TYPES = {"blocks", "blocked-by", "related", "duplicates", "conflicts-with"}
 RELATION_DIRECTIONS = {"in", "out"}
-DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH, COMPILE_ARTIFACTS_PATH}
+COMMENT_AUTHOR_TYPES = {"user", "agent", "system"}
+COMMENT_STATUSES = {"active", "resolved", "hidden"}
+DATA_FILES = {TASKS_PATH, HISTORY_PATH, CAPABILITIES_PATH, AGENTS_PATH, ROADMAP_PATH, SKILL_TREE_PATH, COMPILE_ARTIFACTS_PATH, COMMENTS_PATH}
 DATA_WRITE_CONTEXT = threading.local()
 
 
@@ -3072,6 +3075,130 @@ def save_review(payload: dict) -> dict:
     return {"saved": rel(target)}
 
 
+def new_comment_id() -> str:
+    return "cmt-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
+
+
+def load_comments() -> list[dict]:
+    payload = read_json_object(COMMENTS_PATH, {"comments": []})
+    return [comment for comment in payload.get("comments", []) if isinstance(comment, dict)]
+
+
+def save_comments(comments: list[dict]) -> None:
+    write_json_object(COMMENTS_PATH, {"comments": comments}, "save-task-comments")
+
+
+def get_task_comments(task_id: str) -> list[dict]:
+    comments = [comment for comment in load_comments() if str(comment.get("taskId", "")) == task_id]
+    return sorted(comments, key=lambda comment: str(comment.get("createdAt", "")))
+
+
+def find_comment(comment_id: str) -> dict | None:
+    for comment in load_comments():
+        if comment.get("id") == comment_id:
+            return comment
+    return None
+
+
+def normalize_comment_status(value: object, fallback: str = "active") -> str:
+    status = str(value if value is not None else "").strip().lower()
+    return status if status in COMMENT_STATUSES else fallback
+
+
+def normalize_author_type(value: object, fallback: str = "user") -> str:
+    author_type = str(value if value is not None else "").strip().lower()
+    return author_type if author_type in COMMENT_AUTHOR_TYPES else fallback
+
+
+def normalize_parent_id(value: object) -> str | None:
+    parent_id = clean_text(value, 80)
+    return parent_id or None
+
+
+def ensure_comment_task_exists(task_id: str) -> None:
+    task, _ = find_task_record(task_id, load_tasks(), load_history())
+    if not task:
+        raise ValueError("task not found")
+
+
+def unique_comment_id(existing: list[dict]) -> str:
+    used = {str(comment.get("id", "")) for comment in existing}
+    comment_id = new_comment_id()
+    while comment_id in used:
+        comment_id = new_comment_id()
+    return comment_id
+
+
+def add_comment(task_id: str, payload: dict, author_info: dict) -> dict:
+    task_id = clean_text(task_id, 80)
+    if not task_id:
+        raise ValueError("taskId is required")
+    ensure_comment_task_exists(task_id)
+    content = clean_text(payload.get("content"), 1000)
+    if not content:
+        raise ValueError("content is required")
+    comments = load_comments()
+    parent_id = normalize_parent_id(payload.get("parentId"))
+    if parent_id:
+        parent = next((comment for comment in comments if comment.get("id") == parent_id), None)
+        if not parent or parent.get("taskId") != task_id:
+            raise ValueError("parent comment not found")
+    now = datetime.now().isoformat(timespec="seconds")
+    comment = {
+        "id": unique_comment_id(comments),
+        "taskId": task_id,
+        "author": clean_text(author_info.get("author"), 80, "unknown"),
+        "authorType": normalize_author_type(author_info.get("authorType")),
+        "content": content,
+        "createdAt": now,
+        "updatedAt": now,
+        "parentId": parent_id,
+        "status": normalize_comment_status(payload.get("status"), "active"),
+    }
+    comments.append(comment)
+    save_comments(comments)
+    return comment
+
+
+def update_comment(comment_id: str, payload: dict) -> dict:
+    comment_id = clean_text(comment_id, 80)
+    comments = load_comments()
+    for comment in comments:
+        if comment.get("id") != comment_id:
+            continue
+        changed = False
+        if "content" in payload:
+            content = clean_text(payload.get("content"), 1000)
+            if not content:
+                raise ValueError("content is required")
+            comment["content"] = content
+            changed = True
+        if "status" in payload:
+            status = normalize_comment_status(payload.get("status"), "")
+            if not status:
+                raise ValueError("invalid status")
+            comment["status"] = status
+            changed = True
+        if changed:
+            comment["updatedAt"] = datetime.now().isoformat(timespec="seconds")
+            save_comments(comments)
+        return comment
+    raise ValueError("comment not found")
+
+
+def delete_comment(comment_id: str) -> dict:
+    comment_id = clean_text(comment_id, 80)
+    comments = load_comments()
+    for comment in comments:
+        if comment.get("id") != comment_id:
+            continue
+        comment["status"] = "hidden"
+        comment["updatedAt"] = datetime.now().isoformat(timespec="seconds")
+        save_comments(comments)
+        return comment
+    raise ValueError("comment not found")
+
+
 def safe_web_path(path: str) -> Path:
     if path == "/":
         return WEB / "index.html"
@@ -3200,6 +3327,23 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"error": "admin or agent authorization required"}, 403)
         return False
 
+    def current_author_info(self, payload: dict | None = None) -> dict:
+        if self.agent_info:
+            return {"author": self.agent_info.get("name", "agent"), "authorType": "agent"}
+        payload = payload if isinstance(payload, dict) else {}
+        return {
+            "author": clean_text(payload.get("author"), 80, "admin"),
+            "authorType": normalize_author_type(payload.get("authorType"), "user"),
+        }
+
+    def can_manage_comment(self, comment: dict) -> bool:
+        if self.is_admin or not AUTH_TOKEN:
+            return True
+        if not self.agent_info:
+            return False
+        agent_names = {str(self.agent_info.get("name", "")), str(self.agent_info.get("id", ""))}
+        return comment.get("authorType") == "agent" and str(comment.get("author", "")) in agent_names
+
     def read_json_body(self) -> dict:
         size = int(self.headers.get("Content-Length", "0") or "0")
         payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
@@ -3213,6 +3357,7 @@ class Handler(BaseHTTPRequestHandler):
         query = urllib.parse.parse_qs(parsed.query)
         capability_match = re.fullmatch(r"/api/capabilities/([^/]+)", path)
         task_relations_match = re.fullmatch(r"/api/tasks/([^/]+)/relations", path)
+        task_comments_match = re.fullmatch(r'/api/tasks/([^/]+)/comments', path)
         try:
             if path == "/api/health":
                 self.send_json({"ok": True, "root": str(ROOT), "stats": stats()})
@@ -3243,6 +3388,9 @@ class Handler(BaseHTTPRequestHandler):
             elif task_relations_match:
                 task_id = urllib.parse.unquote(task_relations_match.group(1))
                 self.send_json(task_relation_chain(task_id))
+            elif task_comments_match:
+                task_id = urllib.parse.unquote(task_comments_match.group(1))
+                self.send_json({"comments": get_task_comments(task_id)})
             elif path == "/api/tasks/draft-stats":
                 self.send_json(draft_stats())
             elif path == "/api/tasks/mine":
@@ -3296,6 +3444,7 @@ class Handler(BaseHTTPRequestHandler):
         size = int(self.headers.get("Content-Length", "0") or "0")
         try:
             payload = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
+            task_comments_match = re.fullmatch(r'/api/tasks/([^/]+)/comments', path)
             if path == "/api/auth/login":
                 agent = verify_agent(payload.get("name"), payload.get("token"))
                 if not agent:
@@ -3322,6 +3471,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(search_tasks(payload))
             elif path == "/api/tasks/batch":
                 self.send_json(batch_tasks(payload))
+            elif task_comments_match:
+                if not self.require_admin_or_agent():
+                    return
+                task_id = urllib.parse.unquote(task_comments_match.group(1))
+                try:
+                    comment = add_comment(task_id, payload, self.current_author_info(payload))
+                except ValueError as exc:
+                    status = 404 if "not found" in str(exc) else 400
+                    self.send_json({"error": str(exc)}, status)
+                    return
+                self.send_json({"comment": comment, "comments": get_task_comments(task_id)}, 201)
             elif path == "/api/compile/full":
                 if not self.require_admin():
                     return
@@ -3389,7 +3549,21 @@ class Handler(BaseHTTPRequestHandler):
         try:
             payload = self.read_json_body()
             task_approve_match = re.fullmatch(r"/api/tasks/([^/]+)/(approve|reject)", path)
-            if task_approve_match:
+            comment_match = re.fullmatch(r'/api/comments/([^/]+)', path)
+            if comment_match:
+                comment_id = urllib.parse.unquote(comment_match.group(1))
+                comment = find_comment(comment_id)
+                if not comment:
+                    self.send_json({"error": "comment not found"}, 404)
+                    return
+                if not self.can_manage_comment(comment):
+                    self.send_json({"error": "forbidden"}, 403)
+                    return
+                try:
+                    self.send_json({"comment": update_comment(comment_id, payload)})
+                except ValueError as exc:
+                    self.send_json({"error": str(exc)}, 400)
+            elif task_approve_match:
                 if not self.require_admin():
                     return
                 task_id = urllib.parse.unquote(task_approve_match.group(1))
@@ -3418,7 +3592,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             agent_match = re.fullmatch(r"/api/agents/([^/]+)", path)
-            if agent_match:
+            comment_match = re.fullmatch(r'/api/comments/([^/]+)', path)
+            if comment_match:
+                comment_id = urllib.parse.unquote(comment_match.group(1))
+                comment = find_comment(comment_id)
+                if not comment:
+                    self.send_json({"error": "comment not found"}, 404)
+                    return
+                if not self.can_manage_comment(comment):
+                    self.send_json({"error": "forbidden"}, 403)
+                    return
+                self.send_json({"comment": delete_comment(comment_id)})
+            elif agent_match:
                 if not self.require_admin():
                     return
                 agent_name = urllib.parse.unquote(agent_match.group(1))
@@ -3440,6 +3625,8 @@ def main() -> None:
     port = int(os.environ.get("LLM_TODO_PORT", "8720"))
     host = os.environ.get("LLM_TODO_HOST", "127.0.0.1")
     DATA.mkdir(parents=True, exist_ok=True)
+    if not COMMENTS_PATH.exists():
+        write_text(COMMENTS_PATH, json.dumps({"comments": []}, ensure_ascii=False, indent=2) + "\n")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     REVIEW_DIR.mkdir(parents=True, exist_ok=True)
     ThreadingHTTPServer((host, port), Handler).serve_forever()
