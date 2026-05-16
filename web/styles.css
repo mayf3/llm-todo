@@ -91,6 +91,7 @@ textarea {
   top: 0;
   z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 18px;
@@ -121,11 +122,14 @@ textarea {
 
 nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 nav a,
 .toc a {
+  white-space: nowrap;
   color: var(--ink);
   text-decoration: none;
   border: 1px solid transparent;
@@ -340,6 +344,7 @@ h2 {
 .task-item {
   display: grid;
   gap: 10px;
+  min-width: 0;
   border: 1px solid var(--line);
   border-left: 4px solid var(--accent-2);
   border-radius: var(--radius);
@@ -371,6 +376,32 @@ h2 {
 
 .task-item.urgency-future {
   border-left-color: #9aa5ae;
+}
+
+.task-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.task-type-badge {
+  display: inline-flex !important;
+  width: fit-content;
+  min-height: 22px;
+  align-items: center;
+  border: 1px solid var(--type-color);
+  border-color: color-mix(in srgb, var(--type-color) 35%, transparent);
+  border-radius: 999px;
+  background: #fff;
+  background: color-mix(in srgb, var(--type-color) 12%, #ffffff);
+  padding: 2px 8px;
+  color: var(--type-color);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .task-item strong,
