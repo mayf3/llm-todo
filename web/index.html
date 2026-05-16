@@ -113,10 +113,11 @@
             <span class="gantt-legend-item priority-high">🔴 高</span>
             <span class="gantt-legend-item priority-medium">🟡 中</span>
             <span class="gantt-legend-item priority-low">⚪ 低</span>
-            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#1677ff"></span> 个人</span>
-            <span class="gantt-type-dot" style="background:#52c41a"></span> Agent
-            <span class="gantt-type-dot" style="background:#fa8c16"></span> 审阅
-            <span class="gantt-type-dot" style="background:#722ed1"></span> 讨论
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#2f5f9a"></span> 开发</span>
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#9b5fc0"></span> 设计</span>
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#93622a"></span> 内容</span>
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#d46b08"></span> 审查</span>
+            <span class="gantt-legend-item"><span class="gantt-type-dot" style="background:#2d7a5f"></span> 会议</span>
           </div>
           <div id="gantt-grid" class="gantt-grid">
             <div class="gantt-head-row" id="gantt-head-row"></div>
@@ -132,10 +133,10 @@
             <h1>规划</h1>
             <span>时间尺度文档 · 规划文档阅读</span>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="planning-actions">
             <a href="/map">🧭 能力地图</a>
             <a href="/character">👤 角色</a>
-            <button type="button" id="sync-remote-btn" style="background:#205a4f;color:#fff;border-color:#205a4f;min-height:38px;padding:0 14px;font-weight:600;" title="同步代码到远程服务器">🔄 同步</button>
+            <button type="button" id="sync-remote-btn" class="sync-button" title="同步代码到远程服务器">🔄 同步</button>
           </div>
         </div>
         <div class="stat-strip" id="stat-strip"></div>
@@ -277,10 +278,12 @@
           <label>
             类型
             <select id="edit-type">
-              <option value="personal">个人</option>
-              <option value="agent">Agent</option>
-              <option value="review">评审</option>
-              <option value="discuss">讨论</option>
+              <option value="dev">💻 开发</option>
+              <option value="design">🎨 设计</option>
+              <option value="content">✍️ 内容</option>
+              <option value="review">🔍 审查</option>
+              <option value="meeting">📅 会议</option>
+              <option value="other">📌 其他</option>
             </select>
           </label>
           <label>
@@ -299,6 +302,33 @@
         <div class="modal-actions">
           <button type="button" id="task-edit-cancel">取消</button>
           <button type="submit">保存</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="sync-modal" class="modal-backdrop" hidden>
+      <form id="sync-form" class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="sync-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="sync-title">远程代码同步</h2>
+            <span>同步 Web 文件和数据快照到远端 LLM Todo 服务</span>
+          </div>
+          <button type="button" class="icon-button" id="sync-close" aria-label="关闭">×</button>
+        </div>
+        <div class="form-grid">
+          <label class="full-field">
+            远端 URL
+            <input id="sync-url" type="url" placeholder="留空则使用服务端配置" autocomplete="url" />
+          </label>
+          <label class="full-field">
+            Token
+            <input id="sync-token" type="password" placeholder="留空则使用服务端配置或仅导出本地快照" autocomplete="off" />
+          </label>
+        </div>
+        <p id="sync-status" class="sync-status" hidden></p>
+        <div class="modal-actions">
+          <button type="button" id="sync-cancel">取消</button>
+          <button type="submit" id="sync-submit">开始同步</button>
         </div>
       </form>
     </div>

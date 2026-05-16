@@ -8,6 +8,9 @@ let activeIndexTab = "tasks";
 let taskGroupCollapsed = { now: false, week: false, future: false };
 let draftState = { tasks: [], stats: null };
 let draftSelectedIds = new Set();
+let syncInFlight = false;
+
+const SYNC_URL_STORAGE_KEY = "llm_todo_sync_url";
 
 const statusLabels = { active: "进行中", waiting: "等待中", done: "已完成", dropped: "已放弃", draft: "需求池", archived: "已归档" };
 const horizonLabels = { today: "今天", week: "本周", month: "本月", quarter: "季度", year: "年度", decade: "十年", lifetime: "人生" };
@@ -15,8 +18,9 @@ const areaLabels = { system: "系统", life: "生活", learning: "学习", work:
 const priorityLabels = { high: "高", medium: "中", low: "低" };
 const kindLabels = { index: "索引", horizon: "时间尺度", area: "领域", log: "日志", review: "评审", page: "页面" };
 const priorityMarks = { high: "🔴", medium: "🟡", low: "⚪" };
-const typeLabels = { personal: "个人", agent: "Agent", review: "评审", discuss: "讨论" };
-const typeColors = { personal: "#1677ff", agent: "#52c41a", review: "#fa8c16", discuss: "#722ed1" };
+const typeLabels = { dev: "💻 开发", design: "🎨 设计", content: "✍️ 内容", review: "🔍 审查", meeting: "📅 会议", other: "📌 其他" };
+const legacyTypeAliases = { personal: "other", agent: "dev", discuss: "meeting" };
+const typeColors = { dev: "#2f5f9a", design: "#9b5fc0", content: "#93622a", review: "#d46b08", meeting: "#2d7a5f", other: "#66727d" };
 const horizonRanks = { today: 0, week: 1, month: 2, quarter: 3, year: 4, decade: 5, lifetime: 6 };
 const horizonDocLabels = [
   ["lifetime", "人生尺度"],
@@ -32,6 +36,18 @@ const taskGroupConfig = [
   { id: "week", title: "🟡 本周待办", note: "本周内到期，或已有明确下一步" },
   { id: "future", title: "⚪ 未来 / 待定", note: "长期事项、低优先级或待明确下一步" },
 ];
+
+function normalizeTaskType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  return typeLabels[raw] ? raw : legacyTypeAliases[raw] || "other";
+}
+
+function taskTypeBadge(task) {
+  const taskType = normalizeTaskType(task?.type);
+  const typeColor = typeColors[taskType] || typeColors.other;
+  const typeLabel = typeLabels[taskType] || typeLabels.other;
+  return `<span class="task-type-badge" style="--type-color:${escapeHtml(typeColor)};">${escapeHtml(typeLabel)}</span>`;
+}
 
 function tabFromHash() {
   const tab = window.location.hash.replace(/^#/, "");
@@ -292,14 +308,11 @@ function renderWeekPlan() {
         .sort((a, b) => (a.priority === "high" ? -1 : 1))
         .map((task) => {
           const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
-          const taskType = task.type || "personal";
-          const typeColor = typeColors[taskType] || "#1677ff";
-          const typeLabel = typeLabels[taskType] || taskType;
           const statusIcon = task.status === "active" ? "" : `[${escapeHtml(statusLabels[task.status] || task.status)}]`;
           return `<div class="week-task-item ${escapeHtml(task.status)}" data-task-id="${escapeAttr(task.id)}" title="${escapeAttr(task.title)}">
             <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
             <span class="week-task-meta">${statusIcon} ${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")}</span>
-            <span style="display:inline-block;padding:0 6px;border-radius:3px;background:${typeColor}20;color:${typeColor};font-size:10px;margin-top:2px;">${escapeHtml(typeLabel)}</span>
+            ${taskTypeBadge(task)}
             <span class="week-task-actions" style="display:flex;gap:4px;margin-top:4px;">
               ${task.status === "active" ? `<button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button><button type="button" data-action="waiting" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">⏳</button>` : ""}
               ${task.status === "waiting" ? `<button type="button" data-action="active" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">▶️</button><button type="button" data-action="done" data-id="${escapeAttr(task.id)}" style="font-size:0.65rem;padding:1px 6px;">✅</button>` : ""}
@@ -326,13 +339,10 @@ function renderWeekPlan() {
     const unsatHtml = unscheduled
       .map((task) => {
         const priorityIcon = task.priority === "high" ? "🔴" : task.priority === "medium" ? "🟡" : "⚪";
-        const taskType = task.type || "personal";
-        const typeColor = typeColors[taskType] || "#1677ff";
-        const typeLabel = typeLabels[taskType] || taskType;
         return `<div class="week-task-item ${escapeHtml(task.status)}" data-task-id="${escapeAttr(task.id)}" title="${escapeAttr(task.title)}">
           <span class="week-task-title">${priorityIcon} ${escapeHtml(task.title)}</span>
           <span class="week-task-meta">${escapeHtml(task.area ? areaLabels[task.area] || task.area : "")} · 未安排日期</span>
-          <span style="display:inline-block;padding:0 6px;border-radius:3px;background:${typeColor}20;color:${typeColor};font-size:10px;">${escapeHtml(typeLabel)}</span>
+          ${taskTypeBadge(task)}
         </div>`;
       })
       .join("");
@@ -367,19 +377,18 @@ function taskMatchesFilters(task) {
     (!area || task.area === area) &&
     (!priority || task.priority === priority) &&
     (!tag || tags.includes(tag)) &&
-    (!type || (task.type || "personal") === type)
+    (!type || normalizeTaskType(task.type) === type)
   );
 }
 
 function renderTaskCard(task, includeStatus = false) {
-  const taskType = task.type || "personal";
-  const typeColor = typeColors[taskType] || "#1677ff";
-  const typeLabel = typeLabels[taskType] || taskType;
   return `
     <article class="task-item ${escapeHtml(task.status)} urgency-${escapeHtml(taskGroupId(task))}">
       <div>
-        <strong>${escapeHtml(task.title)}</strong>
-        <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:${typeColor}20;color:${typeColor};font-size:11px;margin-left:6px;vertical-align:middle;">${escapeHtml(typeLabel)}</span>
+        <div class="task-title-row">
+          <strong>${escapeHtml(task.title)}</strong>
+          ${taskTypeBadge(task)}
+        </div>
         <span>${taskMeta(task, includeStatus)}</span>
         ${renderTags(task)}
         <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
@@ -447,13 +456,13 @@ function renderHistory() {
       : tasks
           .map(
             (task) => {
-              const taskType = task.type || "personal";
-              const typeColor = typeColors[taskType] || "#1677ff";
-              const typeLabel = typeLabels[taskType] || taskType;
               return `
               <article class="task-item ${escapeHtml(task.status)} archived">
                 <div>
-                  <strong>${escapeHtml(task.title)} <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:${typeColor}20;color:${typeColor};font-size:11px;margin-left:6px;vertical-align:middle;">${escapeHtml(typeLabel)}</span></strong>
+                  <div class="task-title-row">
+                    <strong>${escapeHtml(task.title)}</strong>
+                    ${taskTypeBadge(task)}
+                  </div>
                   <span>${taskMeta(task, true)}</span>
                   ${renderTags(task)}
                   <p>${escapeHtml(task.nextAction || task.notes || "未记录下一步")}</p>
@@ -917,9 +926,6 @@ function renderGantt() {
 
   // Render task rows as bars
   const priorityColors = { high: "#ff4d4f", medium: "#faad14", low: "#d9d9d9" };
-  const typeColors = window.typeColors || { personal: "#1677ff", agent: "#52c41a", review: "#fa8c16", discuss: "#722ed1" };
-  const typeLabels = window.typeLabels || { personal: "个人", agent: "Agent", review: "审阅", discuss: "讨论" };
-  const statusLabels = window.statusLabels || {};
 
   const bodyHtml = inRange
     .map((task) => {
@@ -928,7 +934,7 @@ function renderGantt() {
       const offset = dayIndex >= 0 ? dayIndex : 6; // clamp to saturday
       const width = 1; // single day width
       const barColor = priorityColors[task.priority] || "#1677ff";
-      const taskType = task.type || "personal";
+      const taskType = normalizeTaskType(task.type);
       const tColor = typeColors[taskType] || "#1677ff";
       const tLabel = typeLabels[taskType] || taskType;
       const pLabel = { high: "高", medium: "中", low: "低" }[task.priority] || "";
@@ -977,7 +983,7 @@ function openTaskDetail(taskId) {
   document.getElementById("edit-horizon").value = task.horizon || "week";
   document.getElementById("edit-repeat").value = task.repeat || "";
   document.getElementById("edit-area").value = task.area || "";
-  document.getElementById("edit-type").value = task.type || "personal";
+  document.getElementById("edit-type").value = normalizeTaskType(task.type);
   document.getElementById("edit-tags").value = Array.isArray(task.tags) ? task.tags.join(", ") : "";
   document.getElementById("edit-next-action").value = task.nextAction || "";
   document.getElementById("edit-notes").value = task.notes || "";
@@ -1035,41 +1041,80 @@ async function saveTaskModal(event) {
 }
 
 // ===== Remote Sync =====
-async function triggerRemoteSync() {
+function setSyncStatus(message, tone = "") {
+  const status = document.getElementById("sync-status");
+  if (!status) return;
+  status.hidden = !message;
+  status.textContent = message || "";
+  status.dataset.tone = tone;
+}
+
+function showSyncModal() {
+  const modal = document.getElementById("sync-modal");
+  const urlInput = document.getElementById("sync-url");
+  const tokenInput = document.getElementById("sync-token");
+  if (!modal || !urlInput || !tokenInput) return;
+  urlInput.value = localStorage.getItem(SYNC_URL_STORAGE_KEY) || "";
+  tokenInput.value = "";
+  setSyncStatus("");
+  modal.hidden = false;
+  setTimeout(() => urlInput.focus(), 0);
+}
+
+function hideSyncModal() {
+  if (syncInFlight) return;
+  document.getElementById("sync-modal").hidden = true;
+  document.getElementById("sync-form").reset();
+  setSyncStatus("");
+}
+
+function formatSyncResult(result) {
+  if (!result.ok) return `同步失败: ${result.error || "未知错误"}`;
+  const lines = [
+    "同步完成。",
+    `Web 文件: ${result.web_files || 0} 个`,
+    `数据: ${Math.round((Number(result.data_size) || 0) / 1024)} KB`,
+  ];
+  if (result.remote) lines.push(`远程推送: ${result.remote.ok ? "成功" : "失败"}`);
+  if (result.remote_error) lines.push(`远程连接异常: ${result.remote_error}`);
+  return lines.join("\n");
+}
+
+async function submitRemoteSync(event) {
+  event.preventDefault();
   const btn = document.getElementById("sync-remote-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "🔄 同步中...";
+  const submit = document.getElementById("sync-submit");
+  const url = document.getElementById("sync-url").value.trim().replace(/\/+$/, "");
+  const token = document.getElementById("sync-token").value.trim();
+  syncInFlight = true;
+  if (btn) btn.disabled = true;
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "同步中...";
   }
+  setSyncStatus("正在同步，请稍候。");
 
   try {
     const result = await api("/api/sync", {
       method: "POST",
-      body: JSON.stringify({}),
+      body: JSON.stringify({ url, token }),
     });
-
-    let message = "";
-    if (result.ok) {
-      message = `同步完成！\nWeb 文件: ${result.web_files} 个\n数据: ${Math.round(result.data_size / 1024)} KB`;
-      if (result.remote) {
-        message += `\n远程推送: ${result.remote.ok ? "成功" : "失败"}`;
-      }
-      if (result.remote_error) {
-        message += `\n远程连接异常: ${result.remote_error}`;
-      }
-      message += `\n\n导出的文件:\n${result.export.web.join("\n")}`;
-    } else {
-      message = `同步失败: ${result.error}`;
-    }
-    alert(message);
+    if (url) localStorage.setItem(SYNC_URL_STORAGE_KEY, url);
+    setSyncStatus(formatSyncResult(result), result.ok ? "success" : "error");
   } catch (error) {
-    alert("同步请求失败: " + error.message);
+    setSyncStatus("同步请求失败: " + error.message, "error");
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "🔄 同步";
+    syncInFlight = false;
+    if (btn) btn.disabled = false;
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = "开始同步";
     }
   }
+}
+
+function triggerRemoteSync() {
+  showSyncModal();
 }
 
 async function init() {
@@ -1223,6 +1268,12 @@ async function init() {
 
   // Remote sync button
   document.getElementById("sync-remote-btn")?.addEventListener("click", triggerRemoteSync);
+  document.getElementById("sync-form")?.addEventListener("submit", submitRemoteSync);
+  document.getElementById("sync-close")?.addEventListener("click", hideSyncModal);
+  document.getElementById("sync-cancel")?.addEventListener("click", hideSyncModal);
+  document.getElementById("sync-modal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) hideSyncModal();
+  });
 
   document.getElementById("doc-list").addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-doc]");
