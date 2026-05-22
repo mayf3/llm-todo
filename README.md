@@ -1,29 +1,70 @@
 # LLM Todo
 
-本地 LLM 任务与人生规划工作台。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-这个项目沿用 LLM Wiki 的模式：原始输入保存在 `raw/`，长期规划和任务解释保存在 `todo/`，当前任务保存在 `data/tasks.json`，历史归档保存在 `data/history.json`，浏览器工作台提供任务视图、规划文档和聊天窗口。
+A local-first task management and life planning workspace powered by LLM.
+
+一个本地优先的 LLM 任务与人生规划工作台。
+
+## Features
+
+- 📋 **Task Management** — CRUD tasks with priorities, tags, horizons, and areas
+- 🤖 **Multi-Agent Support** — Each agent gets JWT auth, task views, and assignment tracking
+- 🧠 **LLM Provider Integration** — Plug in OpenAI / DeepSeek / GLM for AI-assisted planning
+- 📅 **Time Horizons** — Week / Month / Quarter / Year / Lifetime task scoping
+- 🔗 **Task Relations** — Auto-compile related tasks with blocked-by / conflicts-with links
+- 📊 **Web Dashboard** — Built-in HTML dashboard with Gantt chart, task board, and chat
+- 💬 **Chat Interface** — Natural language task creation and management
+- 🔄 **Remote Sync** — Sync tasks between instances
 
 ## Quick Start
 
 ```bash
+# Clone
+git clone https://github.com/mayf3/llm-todo.git
+cd llm-todo
+
+# Run
 python3 scripts/llm_todo_server.py
 ```
 
-打开 `http://127.0.0.1:8720/`。
+Open `http://127.0.0.1:8720/`.
 
-可选环境：
+### Environment Variables
 
 ```bash
-export OPENAI_API_KEY=...
+export OPENAI_API_KEY=...          # OpenAI provider
+export OPENAI_COMPAT_API_KEY=...   # DeepSeek or other OpenAI-compatible API
+export GLM_API_KEY=...             # Zhipu GLM provider
 export LLM_TODO_MODEL=gpt-5.4-mini
 export AGENT_CHAT_BASE_URL=http://127.0.0.1:8710
 ```
 
-默认没有模型 key 时，系统使用本地规则助手：可以通过聊天新增任务、列出下一步、生成规划摘要。接入真实 provider 后，同一上下文包会交给模型处理。
+Default: when no model key is set, the system uses a local rule-based planner that supports task creation, listing next steps, and planning summaries via chat.
 
-## Project Boundary
+## Project Structure
 
-- `llm_todo`：任务、规划、个人长期上下文、写入策略。
-- sibling `../llm_agent_chat`：可嵌入聊天 UI、provider adapter、工具 manifest 协议。
-- 后续可以把 `llm_agent_chat` 作为 git submodule 或 package 引入。
+```
+llm-todo/
+├── scripts/           # Python server
+│   └── llm_todo_server.py
+├── web/               # HTML dashboard
+│   ├── index.html
+│   ├── app.js
+│   └── shared.js
+├── data/              # Runtime data (gitignored)
+├── todo/              # Planning docs
+│   ├── horizons/      # Week/Month/Quarter/Year/Lifetime
+│   └── areas/         # System/Life/Dev/Work
+├── schema/            # JSON schemas
+└── docs/              # Documentation
+```
+
+## Architecture
+
+- `llm_todo` — Tasks, planning, personal long-term context, write strategies
+- `llm_agent_chat` — Chat UI, provider adapter, tool manifest protocol (sibling project)
+
+## License
+
+[MIT](LICENSE)
