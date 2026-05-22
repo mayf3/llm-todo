@@ -910,6 +910,42 @@
       "name": "灵魂拷问师",
       "token": "b98b6c76014449b69b0b169ef7a530da",
       "created": "2026-05-14"
+    },
+    {
+      "id": "smart-home-agent",
+      "name": "智居管家（逸安）",
+      "token": "66a05d85fe8f68e2671756a2f956f943",
+      "created": "2026-05-15"
+    },
+    {
+      "id": "learning-expert",
+      "name": "学习专家",
+      "token": "0a761ed8a000cc10ca9da47ab07ec2ed",
+      "created": "2026-05-15"
+    },
+    {
+      "id": "open-source-agent",
+      "name": "开源管家",
+      "token": "198fbc633e8c71f6c37dbe2b5a752801",
+      "created": "2026-05-15"
+    },
+    {
+      "id": "cto-agent",
+      "name": "技术研发总监",
+      "token": "d830504583bf7cdd46810c9619f8d9ee",
+      "created": "2026-05-15"
+    },
+    {
+      "id": "quant-trading-agent",
+      "name": "量化交易专家",
+      "token": "75732cc39013e09bf15fd1e85e5c1e6a",
+      "created": "2026-05-15"
+    },
+    {
+      "id": "content-ops-agent",
+      "name": "内容运营专家",
+      "token": "72af4adfbb35a482c0eb3b6e5a12124d",
+      "created": "2026-05-15"
     }
   ],
   "sessions": {
@@ -928,6 +964,258 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdG9jay1hZ2VudCIsIm5hbWUiOiLogqHnpajliIbmnpDluIgiLCJpYXQiOjE3Nzg3NTc0ODEsImp0aSI6IjE3MzRlMjQwYjhlYjQwYzc4ZWRiMjE1Y2M2NmQxY2IwIn0._ndKbzpfhTX56AUrtNt0Q7X72A-86RNJyt9m3vWjvJA": {
       "agentId": "stock-agent",
       "created": "2026-05-14T19:18:01"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODgyNTQ2NiwianRpIjoiYjlkZjg2OTJlNTg2NDZlZWI3NDk0NDJlZDhhMzc5NTEifQ.YguflIlAEuoUabDgfl9SVEiyJXU74_PG2yA1T6uiNlI": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T14:11:06"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg0MzIwNSwianRpIjoiZDQ4ZTBhOWFmYmY5NGM2N2JlMDFjNTIzNmYwNTc2ZmIifQ.ycgn5ZDazkP2MLkB_cM3SMmQxF8iqvU9QmS90rjSmTk": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T19:06:45"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsZWFybmluZy1leHBlcnQiLCJuYW1lIjoi5a2m5Lmg5LiT5a62IiwiaWF0IjoxNzc4ODQzMzYxLCJqdGkiOiI0YjI4NTQ3YmRiYTQ0YTExYjFjOWVlYTQ1NTI0NjljMyJ9.KxBi2pvgJr0-McvIU6SVMoqj1ZA6FaVYxFP1VtdNF7A": {
+      "agentId": "learning-expert",
+      "created": "2026-05-15T19:09:21"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg0MzQ2MiwianRpIjoiN2FhNjY5NWU0MTViNDk5YWE0NTY1YTI3ODlhMWRjNmIifQ._1XHwpfi5KZZPc_35e1L-GBGvX8FdzjA1lwt7PqNooI": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T19:11:02"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsZWFybmluZy1leHBlcnQiLCJuYW1lIjoi5a2m5Lmg5LiT5a62IiwiaWF0IjoxNzc4ODQzNDcwLCJqdGkiOiJlMjM3OTQzN2YzZjY0NzNmYWFiZWI5MDJiNGMyYjI0MiJ9.G1ZlQxJ_aQ1M9-NtxW-w_xPAN7_Y7KWHB1FYb4GqZJA": {
+      "agentId": "learning-expert",
+      "created": "2026-05-15T19:11:10"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg0MzUyMiwianRpIjoiM2NiOTlkNTFjOTBkNDM0YTk0MzdjYzI0NDkxMWYxNGUifQ.j9L9UHQ9msnfLV9k3vUhiznCzPHzI-FjCE8zV6u9L6E": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T19:12:02"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsZWFybmluZy1leHBlcnQiLCJuYW1lIjoi5a2m5Lmg5LiT5a62IiwiaWF0IjoxNzc4ODQzNTM4LCJqdGkiOiIzMzRiZTk1ZThhZTc0NGIzOWRmZTFmZDM3N2QwM2NkZSJ9.e0kdIN8ea_hES-hswLQJv9PnLYcpdBXk9DVrj25-udw": {
+      "agentId": "learning-expert",
+      "created": "2026-05-15T19:12:18"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1MjY1MiwianRpIjoiODIwOGE0OGVmMTM5NGQ3MThhOWExYTc3MTcwZmRiNzgifQ.6SkxbJs0bv2rYqkQLBKjpnFNeq3yXp0q_b9cRNrQV1w": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T21:44:12"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1MjcyNywianRpIjoiYWJjYWJkOTdmYWZkNDFhOGE4NzQ1YjY3ZDk0MDJlODkifQ.vXtQ7KvIL3zAGPAorlVEnpatAcK3ndsVVBRQU24KhKA": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T21:45:27"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTI3NDMsImp0aSI6IjAyMmY5OTlhMmJkYzQ4NDc4NmY1NDdlYjcwNTU1ZjZkIn0.6C6yPSiM9glE_kloEg-IYr-vXRIRRjh63Xf-MWOrtG0": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:45:43"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTI3ODIsImp0aSI6IjBmYjBiZWYyMmRhYzQzZTg4NGUwYTEwNzQ0ZjYyYjNmIn0.ylB5sZ2dRPQKzZOc-vwGDhZ-OuNROuxtXxoumJG2gis": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:46:22"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTI4MjQsImp0aSI6IjE2YTc2NzMzNDcxZTRlOTBhYTQyNTkyOGQxMzg2MWY3In0.nHFWKN1gUH9JNWxGm-oZ_Uws34Nnkxv1vyRj1wpsT4k": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:47:04"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTI4MzEsImp0aSI6ImE3YzA4ODVjN2JkNjQ5YjFiNTNjMTEwZWMyYjFmOWYxIn0.xMcDfEfUQ_9WvUKwdlz9rov4s5LSlvmhLIa7k7SYR3w": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:47:11"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTMwNjksImp0aSI6ImI5ZmMwODQxMTk1MDQ3ZDZhMDE5NTA2OWNjNThiODg5In0.P-lr2AKhjit8EWQW4LGSXW9QCDpdBv9aJ5hRj0wow4s": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:51:09"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1MzExNiwianRpIjoiMmY4MTczMmMxOTNjNDVlY2I5OTU2ZTY1YWU1MzY2OTEifQ.1ceuXhMigaCN3iPvElAQtEdJqhM3JwVww0vYNrk1OK8": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T21:51:56"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NTMxMjksImp0aSI6ImUwMTIzNWEzZWU1ZjQ4Y2M5MWIxMzMzMjEyMjk4ZjM1In0.QbRPNfD0JuGqUXvdjK-L7Ts-cjzDxMX9hksJ4hE67Jc": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-15T21:52:09"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1NDQ5OCwianRpIjoiY2JmNmZjNmQ0OTlmNGY4ZTkyOTA2Njk3ZTAxZDgyYzkifQ.8SftprJ_pYtMXkfYP0Tk2kaYwds5AUJXFrtS970qT4s": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T22:14:58"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1NDY1MSwianRpIjoiNzZiYjU4YWQ3Y2E5NDE0ODhmMjNkZjA4ZmI1YmUyZTEifQ.wNcListbedLwYu03pY14VdrWrk99iHyxiFHEMExASIo": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T22:17:31"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1NTc5MywianRpIjoiNWU3MjVlMTQwNWUyNDAwM2I0ZDM4ODAwYTIyOTJiZjAifQ.q7DPNp1R44HL4H1VCWrbxqu_x7O89mXVa32a0TiUDvY": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T22:36:33"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1NjE1MSwianRpIjoiODhkNjk1ZDVjODFlNDhlYTlmZDUyNWMwY2Q4ZjU4NTIifQ.GE5fWCIgr8uLL-cTSdreFMdVP8Te0oLymKBkdma1Hr0": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T22:42:31"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg1NjI3OCwianRpIjoiMGYzNTVkNWUxMWUyNGQ0MjkxNTc2NDY3Y2FiN2MyZGUifQ.eMPEgxYnsyDJrMeOC7_-v8pETunHIKkiMLbXK6vBViM": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-15T22:44:38"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaG9wcGluZy1saXN0LWFnZW50IiwibmFtZSI6Iui0reeJqea4heWNleeuoeWutiIsImlhdCI6MTc3ODg1Njk0NiwianRpIjoiZjkwMWEwZjRlM2Q3NGQ3MWIxNTg4OTFiM2U0YjAxOWIifQ.F_baexZMV7efiHgz0hvEbniLSxeEBTvbJG09epFyitI": {
+      "agentId": "shopping-list-agent",
+      "created": "2026-05-15T22:55:46"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJyZXNlYXJjaC1hZ2VudCIsIm5hbWUiOiLmt7HluqbnoJTnqbblkZgiLCJpYXQiOjE3Nzg4NjYxOTEsImp0aSI6ImRhNjg2ZWYwOGY0OTQ0MmY5Yjk3M2NjODVlYjdkNTE3In0.a_UAre68fmzuaD4UDM5k6pifXq5lC0lU2pa-_UosLuA": {
+      "agentId": "research-agent",
+      "created": "2026-05-16T01:29:51"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg2NjQ0OCwianRpIjoiZWQ0MTEzZDI5MjAwNDIwNmFlY2I0ZWRjZDAzNTU3ZWIifQ.WdOrTKzpdux5rH18jyWXK49e3ddGLme6xxYGT1lAwlg": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T01:34:08"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg2NjQ4NywianRpIjoiMGMzNDUxZGM1ZGU4NDEyN2EwNGE4MGUzZjM4YjcyMjcifQ.3EpKz6DeXn1JYvrsda1d7wnk4wgmK97_e5mmSErzGjQ": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T01:34:47"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzg4NjczNDUsImp0aSI6IjIwZGE2MTcxZDQ4ODRiNDdiYTU3NWFiZDE1YmExZDY4In0.yQPorutnW3Y1lp8POWrL3-sU5IpbbPXZ0Y9DtBzcXqQ": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-16T01:49:05"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJxdWFudC10cmFkaW5nLWFnZW50IiwibmFtZSI6IumHj-WMluS6pOaYk-S4k-WutiIsImlhdCI6MTc3ODg2NzM4OCwianRpIjoiOTU2NTZiYzNjYzJjNDg3NWJlNjMwYzViNmRhMzIzMTQifQ.zh9fbFe8ZRtM6fn4Vb9KYj28HiSWN1O-U6ulWKwdkiE": {
+      "agentId": "quant-trading-agent",
+      "created": "2026-05-16T01:49:48"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjdG8tYWdlbnQiLCJuYW1lIjoi5oqA5pyv56CU5Y-R5oC755uRIiwiaWF0IjoxNzc4ODY3NDI5LCJqdGkiOiIwMTY2YWMyYWQxZGQ0Y2E4YWYxYzQ3N2EyZTQ4NjBjMiJ9._0YUBvlOjdH09Ka6k1yYnfeE3y2MxH8gwJ-BqG-OrMk": {
+      "agentId": "cto-agent",
+      "created": "2026-05-16T01:50:29"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4ODc5Nzc1LCJqdGkiOiI3MjhjN2JkMzE0OTM0YmE3YmU4MDk5ODNhOWNlZTEwMCJ9.C22aR17GMCzapGWaM0mMoLGJ4FoLn7IYrM8Z-e8Ktlw": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T05:16:15"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4ODc5NzgzLCJqdGkiOiJlYWJhMWEyZDRmNTg0MGRhYTQyMmMwMDhkNDc5MTM2NSJ9.UUeiF_tpE6Abeo7x7FEnLVgAmGGM030J0DLb5B0xygg": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T05:16:23"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4ODc5Nzk1LCJqdGkiOiIzNzgzODg3NWNjN2U0ZTJiYjcwMDFjOTYyM2MzNTljOSJ9.5ZJbTTeq5O8FWKVRIMFwYcdGrs4bwrqHMQ8ZxRWX2LM": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T05:16:35"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg4OTUxMiwianRpIjoiOTllNGYxYjk3ODRhNGNmNGI5YjIxYmYxYzk1YjQxMzIifQ.H28FfC6tW8Q2rnS9id2Tcwc4vHqvOgxlL7SR-ENhmos": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T07:58:32"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJza2lsbC1lbmdpbmVlci1hZ2VudCIsIm5hbWUiOiLmioDog73noJTnqbblkZgiLCJpYXQiOjE3Nzg4OTc2NDMsImp0aSI6IjQ2MDM5OWYwZTcxODQ4ZTA4MjQwYjc1NDYyNWFmNWExIn0.c8pE8si6QIDLiwon9BOz8y__3HMDYeY25zhIq6mz1iQ": {
+      "agentId": "skill-engineer-agent",
+      "created": "2026-05-16T10:14:03"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODg5OTIxOCwianRpIjoiMTE2YzIzMzIwMGNmNDA5OWI5YjJiOGRlOTI0Y2NhNDUifQ.MYG3M5vTjBQAjAauDLbPfmBkDuovZn3-AWYWxk2gysA": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T10:40:18"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkwMTkyNCwianRpIjoiZmE3ZTkzMzllOTVlNDFjZWJlODhkZTUzZmJlYjljNmIifQ.pN9PV8zf6UoQzB5JXW0o4FnDIsuOfgi9LbAb5-WP2P4": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T11:25:24"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkwNDk0OSwianRpIjoiNGM2MDgwNDEzYmU4NDVjZWI3MWY5NGJkMGJjZDc5MGUifQ.gLXIMzaEClL5SWIRzlA95Zo4o1xUSQEEnPkX3IBt3Kw": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T12:15:49"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTA3Mjk0LCJqdGkiOiJmOTY5ZjdjNDJhYjI0YzdlYjczMzhiNWYyMjk0OGFlOCJ9.nVNsbvHqzGd0s9YBYKVXGcLwSHurl-UNBKItbtlWnm8": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T12:54:54"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTA3MzA3LCJqdGkiOiJkMDFiNGVhNjYwNGE0NDYwOTVmZDM0MGM1MTZkYTFhYyJ9.TLsDPLKuPYm78OPvFNYdjESPUcdOlDsrFnEvEGlYe9Q": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T12:55:07"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTA3MzEzLCJqdGkiOiI1MWJmNWMxYzYzMGY0NjlkODliOWY1YjYxMmVlYjM2NiJ9.c1JPZZ3p3S-Opk3VSd_P13EzMchTVIlT6VoL_pZhUYM": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T12:55:13"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkwODEwNSwianRpIjoiNmI4YTFkYjhmNjZmNGRmNTkxNTNmODBmN2Q4MGM1NDgifQ.ageVmDBGeBd3utKSlH7PseiWmR7Q90_pDlOM_U8TlkU": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T13:08:25"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkxNDI2OSwianRpIjoiZTBiM2JjMGFlZmI1NDJkMzhjYzU2MzE1YWUxZDEzZDMifQ.mP4mb6ah1YLGcBFu6Iv5QSTY6S2hMolCiDfnPoT8yjA": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T14:51:09"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkxNDI4MywianRpIjoiOGY3ZTcxMjQ2YWIxNGQ5ZWEzNDhkZGMxZWY4ZjQ1N2YifQ.UXjhwAaDiLlroTaNXXpoyAXEKGAxLKgJ2JSNSX6pWoc": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T14:51:23"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkxNzUxNiwianRpIjoiMmVhZThiNjc1ZDFhNGYwMzk0OGU0MjhmZGJmYjQzYjAifQ.qP56WStILbVUK6rfAg2LxDNXh7KfiNqs9uj-kZC4pSw": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T15:45:16"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZmZpY2llbmN5LWFnZW50IiwibmFtZSI6IuaViOeOh-euoeWutiIsImlhdCI6MTc3ODkzMTc4MSwianRpIjoiM2UzZGRmYzFlZjU0NDkwOWFkZmY1MDljMjA5MDFmNjQifQ.j7TOlnR2rlcyRXtYrotg_i3xciaOg02-iaLaCmouKFU": {
+      "agentId": "efficiency-agent",
+      "created": "2026-05-16T19:43:01"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3ODM1LCJqdGkiOiI4Zjk1ODMyNzgxZjI0YzJjODU5MzBmNjA4OGY0NWNjYyJ9.sYqZYN04hWSRN_upp2ix1Kqt_mXUj0eU8tX_DjSzucM": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:23:55"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3ODYyLCJqdGkiOiJkNzE5OGY0M2IzZTc0Y2NkODliOWQ5YWNhZjUwY2QxYyJ9.ihFjY9Kh2lx5wgZXqUVMB--u4kwJg7GzelI_zMsEmoQ": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:24:22"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3ODg4LCJqdGkiOiI0MDZiNDg0YTczMGQ0ZTRjYWUwNTljMWIwNmE3ZWMwYyJ9.NzdR5tbCsrJJOa7TEJ4RraDcasSDECh27xPTuKNHK0g": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:24:48"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3ODk4LCJqdGkiOiI1Yzc4M2Q4MDU4OTk0NjU5YWM5ODBjMDYzNTI4YWRiYiJ9.E-a-POYAKrUGhZ0gfaluVKU9W1ynhlm3iI9eb92yo5g": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:24:58"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3OTIxLCJqdGkiOiJjNjg5NTlhNTE4MDY0NDViYTAzMWI4ZjcyMDUxYzU0NCJ9.a-NHi8HyLdE0W3INYQ10k-gMcZcmyT8AsyGTU_zMcxo": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:25:21"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZW8tYWdlbnQiLCJuYW1lIjoi6b6Z6Jm-5ZCI5LyZ5Lq6IiwiaWF0IjoxNzc4OTM3OTQ5LCJqdGkiOiJiMmVlNjYxODEwNzU0YjNiYjMzZDIxY2EyOTljYmFlMSJ9.rbmxlUGSZlE5_M1xQWVDlwlvuRQ90gOeJhBBwU77rL4": {
+      "agentId": "ceo-agent",
+      "created": "2026-05-16T21:25:49"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkwMjcxNTEsImp0aSI6IjJkZjg0NmNlNDFiYjQzZTY5NGY3NjA2MTM5ZDgyYzExIn0.58Tr4fhoNOhFmN3ll-dwQmRGmmhNCvFkE5e3bJWLPm4": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-17T22:12:31"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzEwMDIsImp0aSI6ImUyZWViZjA1MjBiMTRlOGE4ZjhjMGEyODA5NGViYmE5In0.Be6klFds8R7Ix7v9aP91aeIcnYNgIOMA-WIpN94wIOk": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:36:42"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzEwMDcsImp0aSI6IjdmMzJlMjc2NGEzNDRhODY4M2EyNjg2MGVmMTBmMTIxIn0.yBbDBzbiW6rdulpqDtjMDPYu-Z7y4jxC1O4Rwh5pY98": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:36:47"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzEwMTMsImp0aSI6ImQ4OTdhNDdjMjg5YzRmNTBiNzI2MjYyMjQ3NjQ5YzE0In0.zSX8h_4JujFR1kiaH61vIiJBYxD6MKYUt00EvnPhjCw": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:36:53"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzEwMjgsImp0aSI6ImY1ZTgyYTFlYmViZjQ4NWI5N2U2ZDA1YzQ3MmIyNzUxIn0.rueqII7Fq-InfLusmHqcrfW-EmNoznxbP1SSSI4oLnM": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:37:08"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzEwNTgsImp0aSI6ImUwNzhjNjEzMGMyMzQyNWJiMmNkZjRjODk3MDRlN2EwIn0.3PCRhbwIWCUvbEgHSeK5qRGJ_b3MIwk_VaqZDVDLQL8": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:37:38"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzExMDQsImp0aSI6IjkxZjg5NjlhZjFlMjQ0YTg4YjRkNmIzMDMzM2IxMWIxIn0.NfLvpTjjxQyWv0dvHpmNLifSK_9yz8YnLceNodYS4_U": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:38:24"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3NzkzMzExMTEsImp0aSI6IjZiZjM5OGZkZDQ2MDQyNzFiYzZkZGFhZDg5ZTAwNTAyIn0.JcVStb8Kp7B72zoPYxvNIk92vJhtH8n_bj-gtS27lZ8": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-21T10:38:31"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzk0MTgwMjQsImp0aSI6IjgyMmUyOTMxMTI1ZTQ3NzNiNDU4M2M5Y2I5NWE4MjkwIn0.IU45q6Cc69OaS8wbP28n0JwVSZcJ8_qE-YDTzaURmjo": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-22T10:47:04"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzk0MTgwMzEsImp0aSI6IjUwMTVjZDJhMjM2YTRiNzZhMmYxOGVlYjY1ZmM3Zjk5In0.LlsEoSPf_efIQeR4jN0gd_RbdmY0hNEHK8mj1znh9Qc": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-22T10:47:11"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzk0MTgxOTMsImp0aSI6IjU5MTU0ZTQ5YzNkMjQzMTU4MmMwZGFhNGUyZjI4YmQ2In0.gjDjXmdfuAsu-vRp5t0O2ipwu6ML6jWYZeFx7c1geG8": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-22T10:49:53"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzk0NDg3NDUsImp0aSI6ImYyOTJhNjU1ZjFmOTRkNTFhZDA5MjMyZGQyOGJmYWIwIn0.s1JrMrDQeNqcTcRYKQ_3wsdcPOCFnOoQqsI-nWVSkzQ": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-22T19:19:05"
+    },
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJvcGVuLXNvdXJjZS1hZ2VudCIsIm5hbWUiOiLlvIDmupDnrqHlrrYiLCJpYXQiOjE3Nzk0NDg3NTYsImp0aSI6ImY4MGU5NWM1YWE5OTQwMzc4NzQ1ZTFhMWE0MWEyYWYzIn0.XuTOjhzwWhfE-WmT5AO3B8EvRGfWrVqYKC1W5unjaes": {
+      "agentId": "open-source-agent",
+      "created": "2026-05-22T19:19:16"
     }
   }
 }

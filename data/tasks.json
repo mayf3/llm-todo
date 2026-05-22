@@ -1,34 +1,11 @@
 {
   "tasks": [
     {
-      "id": "task-20260514-ceo-01",
-      "title": "写作审阅流程自动化：把审稿标准固化成 agent 可执行规则",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "content",
-      "priority": "high",
-      "tags": [
-        "写作",
-        "审阅",
-        "自动化",
-        "博客写作专家"
-      ],
-      "due": "",
-      "nextAction": "跟博客写作专家/阅读专家沟通，把老板的审阅偏好拆成可执行规则，目标：审阅时间从30-60分钟压到10分钟以内",
-      "notes": "老板反馈：目前每篇文章需要30-60分钟审阅循环（审阅→改→再审），是写作闭环的最大瓶颈。需要建立分层审阅机制：第一轮自动审（格式/逻辑/事实）→第二轮自动改（按风格指南）→只把有争议的点推给老板。由龙虾合伙人发起，效率管家跟进。",
-      "repeat": "",
-      "created": "2026-05-14",
-      "updated": "2026-05-14"
-    },
-    {
       "id": "task-20260511-rmd-02",
       "title": "能力地图需求已提交CTO",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "ceo-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -38,18 +15,58 @@
         "需求提交"
       ],
       "due": "",
-      "nextAction": "效率管家自己去看能力地图页面，验收是否合格",
+      "nextAction": "龙虾合伙人验收能力地图页面是否合格",
       "notes": "小马哥说让效率管家先去review验收，不用等他。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260512-071258-21f7aa",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072110-be1c49",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-chatgpt-ceo",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-design-review",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-rmd-03",
       "title": "运营管家搭建运营周报",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "content-ops-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -60,11 +77,15 @@
         "文章发布管家"
       ],
       "due": "",
-      "nextAction": "等账号管理管家平台完成后验收",
+      "nextAction": "搭建运营周报，跟踪文章发布后的各平台数据",
       "notes": "",
       "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-12"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-rvw-01",
@@ -84,6 +105,39 @@
       "nextAction": "每天检查各Agent提交的需求实现情况，给反馈，迭代到初版可用",
       "notes": "各Agent提需求→开发→你每天验收给反馈→迭代→出可用版。不设截止日。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-opensource-html",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-065635-11103b",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-06",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-01",
+          "type": "conflicts-with",
+          "direction": "out",
+          "reason": "同领域优先级可能冲突",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
       "updated": "2026-05-11"
     },
@@ -105,6 +159,39 @@
       "nextAction": "今天看第1轮review结果",
       "notes": "节奏：一周写一篇。写作Agent内部8轮审稿照常跑，但小马哥的验收节点固定在：\n- 周二：看第1轮review ✅ 已完成\n- 周四：看第2轮review\n- 周六：看第3轮review，确认后可发布",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-rvw-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-04",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-ceo-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-design-review",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
       "updated": "2026-05-13"
     },
@@ -126,6 +213,32 @@
       "nextAction": "周四看第2轮review结果并给反馈",
       "notes": "",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-rvw-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-04",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-design-review",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
       "updated": "2026-05-12"
     },
@@ -133,8 +246,8 @@
       "id": "task-20260511-rvw-05",
       "title": "验收知识管家最新网页",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "knowledge-curator-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -144,44 +257,26 @@
         "验收"
       ],
       "due": "",
-      "nextAction": "等知识管家自己验收完成后，再交给小马哥最终验收",
+      "nextAction": "知识管家自验网页，完成后提交小马哥最终验收",
       "notes": "流程：知识管家自己验收 → 交付小马哥 → 小马哥最终验收",
       "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260511-rvw-06",
-      "title": "LLM Todo接入Provider进度",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "llm-todo",
-        "开发",
-        "监督"
-      ],
-      "due": "",
-      "nextAction": "每周检查需求执行进度",
-      "notes": "我提交给CTO后，你负责监督推进。",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-rvw-07",
-      "title": "LLM Todo → 推进安卓APP",
+      "title": "LLM Todo 安卓APP开发（研发总监负责）",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "研发总监",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
-      "priority": "high",
+      "priority": "medium",
       "tags": [
         "llm-todo",
         "部署",
@@ -189,17 +284,43 @@
       ],
       "due": "",
       "nextAction": "跟进安卓APP需求开发进度",
-      "notes": "",
+      "notes": "优先级不高，等研发总监开发完APP后小马哥再下载使用",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-opensource-html",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-06",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "mainLine",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-12"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260518-rvw-01",
-      "title": "搜索能力增强现状验收",
+      "title": "推广 Smart Search skill 给其他 Agent 使用",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "效率管家",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -211,97 +332,158 @@
       ],
       "due": "",
       "nextAction": "检查深度研究员完成的搜索能力建设成果",
-      "notes": "搜索增强已交给深度研究员处理。下周验收看看效果如何。",
+      "notes": "搜索能力已增强，现在需要让其他 Agent 切换到 Smart Search skill。效率管家负责推广。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260515-204407-64f4d3",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260508-073254-dff472",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260518-rvw-02",
       "title": "AI学习软件方向",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "learning-expert",
       "subStatus": "pending",
       "horizon": "quarter",
       "area": "system",
-      "priority": "high",
+      "priority": "low",
       "tags": [
         "AI教育",
         "产品化",
         "讨论"
       ],
       "due": "",
-      "nextAction": "下周抽时间聊一下AI学习软件的产品方向和执行安排",
-      "notes": "",
+      "nextAction": "已完成调研报告，等小马哥验收",
+      "notes": "小马哥反馈：AI学习软件方向优先级不高。重点转向学习方法本身。",
       "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260505-002",
-      "title": "维护年度复盘节奏",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "year",
-      "area": "system",
-      "priority": "medium",
-      "tags": [],
-      "due": "",
-      "nextAction": "在 todo/horizons/year.md 维护年度目标、约束和放弃清单",
-      "notes": "",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260508-073254-dff472",
-      "title": "优化深度研究 Skill",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "技能优化"
+      "relations": [
+        {
+          "id": "task-20260512-193943-8f627e",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-hire-learn",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072637-8423c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-194904-57029d",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "持续打磨深度研究能力",
-      "notes": "",
-      "repeat": "",
+      "layer": "explorationLine",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260508-073254-75b5b6",
       "title": "推进 LLM Wiki 知识库建设",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "待定（需确认知识管家是谁）",
       "subStatus": "pending",
       "horizon": "quarter",
       "area": "system",
-      "priority": "medium",
+      "priority": "high",
       "tags": [
         "知识管理"
       ],
-      "due": "",
-      "nextAction": "知识管家负责需求整理和提出，开发交给Agent团队统一做",
-      "notes": "边界明确：知识管家=需求方（整理需求、提出需求），开发由Agent团队统一负责。",
+      "due": "2026-05-22",
+      "nextAction": "小马哥说交给知识管家，但尚未找到该Agent。需要确认。",
+      "notes": "效率管家分配。原始任务：推进 LLM Wiki 知识库建设。龙虾合伙人有 llm-wiki-knowledge skill，直接对接。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-rvw-05",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-193943-8f627e",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-071258-21f7aa",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072110-be1c49",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-chatgpt-ceo",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260508-073254-9a3aa4",
       "title": "播客/语音内容启动",
       "status": "active",
       "type": "personal",
-      "assignee": "",
+      "assignee": "小马哥",
       "subStatus": "pending",
       "horizon": "quarter",
       "area": "system",
@@ -309,75 +491,24 @@
       "tags": [
         "内容创作"
       ],
-      "due": "",
-      "nextAction": "",
-      "notes": "",
+      "due": "2026-05-22",
+      "nextAction": "人工播客，等小马哥安排",
+      "notes": "播客用人工做，不走AI。内容运营专家不负责此任务。",
       "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260508-073254-1360fd",
-      "title": "提交 iOS 应用到 App Store",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "quarter",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "iOS",
-        "发布"
+      "relations": [
+        {
+          "id": "task-20260515-193442-329c31",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "",
-      "notes": "",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260509-103800-005",
-      "title": "家庭健康月度提醒 — 家庭医生已确认，定期出报告",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "low",
-      "tags": [
-        "家庭",
-        "健康"
-      ],
-      "due": "",
-      "nextAction": "配合网站建设，将报告可视化展示",
-      "notes": "",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-12"
-    },
-    {
-      "id": "task-20260509-103800-006",
-      "title": "育儿周报推送 — 需要通知AI育儿专家出方案",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "low",
-      "tags": [
-        "育儿",
-        "教育"
-      ],
-      "due": "",
-      "nextAction": "小马哥转发消息给AI育儿专家，让他出育儿周报方案",
-      "notes": "需要效率管家生成一段可拷贝的文字给小马哥，让他转发给AI育儿专家。",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260509-103800-007",
@@ -397,29 +528,20 @@
       "nextAction": "恢复投资系统运行，确认数据源正常",
       "notes": "昨天已通知股票分析师恢复推送，但还没搞定。明天（5/14）小马哥再跟进看看。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
       "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260511-eff-04",
-      "title": "账号管理网站需求 — IT运维统一管理网站已覆盖",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "账号管理",
-        "需求提交"
-      ],
-      "due": "",
-      "nextAction": "无需推进，IT运维已有统一管理网站，正在验收中",
-      "notes": "IT运维本身有网站控制所有账号，不需要单独做账号管理网站。",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-13"
     },
     {
       "id": "task-20260510-183000-003",
@@ -439,82 +561,27 @@
       "nextAction": "不需要刻意安排，等小马哥和写作专家聊天时自然提取选题",
       "notes": "不需要单独拆解，等后面和写作专家聊天时自然提升提取出来。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-skill-openclaw",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
       "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260509-191728-a7ddf5",
-      "title": "Q2各项达标检查",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "Q2计划",
-        "W7",
-        "复盘"
-      ],
-      "due": "2026-06-25",
-      "nextAction": "逐项检查Q2目标达成情况",
-      "notes": "",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260509-191728-206cb5",
-      "title": "技能树等级更新+Q2复盘文档",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "Q2计划",
-        "W7",
-        "复盘",
-        "技能树"
-      ],
-      "due": "2026-06-27",
-      "nextAction": "更新技能树等级，写复盘文档",
-      "notes": "",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
-    },
-    {
-      "id": "task-20260509-191728-eb0206",
-      "title": "Q3规划草案",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "Q2计划",
-        "W7",
-        "Q3规划"
-      ],
-      "due": "2026-06-27",
-      "nextAction": "基于Q2复盘草拟Q3目标",
-      "notes": "负责人：龙虾合伙人+老板",
-      "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-11"
     },
     {
       "id": "task-20260511-stk-01",
       "title": "QuantDing仓库Step1：架构理解",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "quant-trading-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -527,15 +594,55 @@
       "nextAction": "Clone仓库阅读，梳理数据获取→策略→回测→可视化的整体架构",
       "notes": "小马哥今天会提醒你开始。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-stk-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-stk-04",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-093134-e3b765",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-stk-02",
       "title": "QuantDing仓库Step2：跑通Demo",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "quant-trading-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -549,15 +656,48 @@
       "nextAction": "按官方文档跑通完整回测Demo",
       "notes": "",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-093134-e3b765",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-stk-01",
+          "type": "conflicts-with",
+          "direction": "out",
+          "reason": "同领域优先级可能冲突",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-stk-03",
       "title": "QuantDing仓库Step3：自己策略回测",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "quant-trading-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -570,15 +710,48 @@
       "nextAction": "编写自己的策略逻辑并完成回测",
       "notes": "关键里程碑",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-stk-04",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-093134-e3b765",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-stk-04",
       "title": "QuantDing仓库Step4：制定出版策略",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "quant-trading-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -591,15 +764,48 @@
       "nextAction": "根据回测结果制定可出版的策略方案",
       "notes": "",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-stk-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-093134-e3b765",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-pen-01",
       "title": "智研龙虾升级改造 — Week1：第一版可用配置",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -608,32 +814,23 @@
         "龙虾"
       ],
       "due": "2026-05-23",
-      "nextAction": "下周（5/19-5/23）出第一版可用的配置版本",
-      "notes": "分阶段推进，每周定下周目标。下周目标：出第一版可用的配置版本。",
+      "nextAction": "跟小马哥讨论龙虾改造细节，确认方案后推进",
+      "notes": "需要先跟小马哥讨论清楚改造细节，不是一个简单上线的功能。讨论确定方案后再开始开发。",
       "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260510-183000-002",
-      "title": "打印机每日打印流程",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "打印",
-        "育儿"
+      "relations": [
+        {
+          "id": "task-20260510-082915-4943ee",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "等待效率管家搭建自动打印流程",
-      "notes": "2D打印机已确认为爱普生，3D打印机为拓竹P1S。我这边会搭建。",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-11",
-      "updated": "2026-05-11"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260511-rvw-04",
@@ -653,38 +850,41 @@
       "nextAction": "周六看第3轮review结果，确认后可发布",
       "notes": "本周三篇完成",
       "repeat": "",
-      "created": "2026-05-11",
-      "updated": "2026-05-12"
-    },
-    {
-      "id": "task-20260512-072121-60344d",
-      "title": "学习回顾机制由学习专家负责",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "学习专家",
-        "知识管家",
-        "复盘",
-        "机制设计"
+      "relations": [
+        {
+          "id": "task-20260511-rvw-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-design-review",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "已完成",
-      "notes": "已通知学习专家，学习回顾机制已确认由学习专家负责。",
-      "repeat": "",
-      "created": "2026-05-12",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-11",
       "updated": "2026-05-12"
     },
     {
       "id": "task-20260512-073144-f9140c",
       "title": "能力集市Step1：核心任务管道开发",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -699,8 +899,48 @@
       "nextAction": "devtools-agent开发中，核心管道：任务提交→队列→取任务→返回结果",
       "notes": "已approved，devtools-agent开发中。拆分为3步：Step1核心管道（当前）→Step2可视化看板→Step3第一个场景跑通（教育顾问→图像生成→打印）。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-073000-edu-print",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step2",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-144900-imgprompt",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260512-093134-e3b765",
@@ -720,30 +960,26 @@
       "nextAction": "提交 QuantDing 回测报告",
       "notes": "执行方是量化分析师，小马哥催促后验收报告。",
       "repeat": "",
-      "created": "2026-05-12",
-      "updated": "2026-05-12"
-    },
-    {
-      "id": "task-20260512-095127-5aee33",
-      "title": "LLM Todo增加Agent任务视图",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "llm-todo",
-        "需求设计",
-        "Agent协作"
+      "relations": [
+        {
+          "id": "task-20260511-rvw-03",
+          "type": "related",
+          "direction": "out",
+          "source": "manual"
+        },
+        {
+          "id": "task-20260511-rmd-01",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "整理需求文档，提给CTO评估",
-      "notes": "当前 LLM Todo 只有人（小马哥）能看的任务列表。需要增加 Agent 任务视图。\n\n核心需求：\n1. Agent 可以登录平台查看分配给自己的任务\n2. 小马哥可以直接分配任务给某个 Agent\n3. Agent 可以提交报告/进度更新\n4. 类似于任务分配系统，Agent 也是\"用户\"\n\n使用场景：\n- 小马哥分配任务给量化分析师，量化分析师登录查看任务并提交报告\n- 龙虾合伙人登录查看自己的OKR学习任务，更新学习进度\n- 各 Agent 可以看到别人分配给自己的任务，完成后标记\n\n技术考虑：\n- Agent 认证机制（如何让 Agent 登录？）\n- 任务分配功能（从人→人，变成人→Agent）\n- 报告提交机制（Agent 如何提交进度/报告？）\n- 权限控制（Agent 只能看自己的任务，小马哥看所有）",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-12"
+      "updated": "2026-05-16"
     },
     {
       "id": "task-20260512-100912-6329a0",
@@ -760,19 +996,38 @@
         "银行卡",
         "邮箱"
       ],
-      "due": "",
+      "due": "2026-05-15",
       "nextAction": "今晚登录各银行APP配置账单自动转发",
-      "notes": "小马哥今晚做。",
+      "notes": "2026-05-15: 小马哥说今晚做",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260515-225018-493505",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072637-8423c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "lifeLine",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260512-104355-2f7e22",
       "title": "搭建家庭健康管理+育儿成长综合网站",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "quarter",
       "area": "life",
@@ -784,40 +1039,107 @@
         "需求设计"
       ],
       "due": "",
-      "nextAction": "分别让家庭医生和育儿专家提各自的需求，合并成一份需求文档提交给CTO",
+      "nextAction": "等家庭医生和教育顾问提交各自需求后，合并排期开发",
       "notes": "核心思路：一个网站两个模块\n\n模块1 — 健康管理（家庭医生负责）：\n- 大人+小孩的健康指标追踪\n- 月度健康报告展示\n- 疫苗接种提醒\n- 季节性健康建议\n\n模块2 — 育儿成长（AI育儿专家负责）：\n- 4岁女宝成长记录（身高体重认知发展）\n- 每周育儿内容推送记录\n- 亲子活动打卡\n- 绘本/故事推荐列表\n\n共通点：\n- 都是家庭成员的状态追踪\n- 都有定期报告/提醒机制\n- 都是同一个用户（小马哥家庭）\n- 数据结构类似（时间线+指标+建议）\n\n执行计划：\n1. 让家庭医生提健康管理页面的具体需求\n2. 让育儿专家提育儿成长页面的具体需求\n3. 合并成一份需求文档\n4. 提交给CTO开发",
       "repeat": "",
-      "created": "2026-05-12",
-      "updated": "2026-05-12"
-    },
-    {
-      "id": "task-20260512-193943-67dd40",
-      "title": "智能家居Agent方案：新招Agent还是现有Agent负责",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "life",
-      "priority": "high",
-      "tags": [
-        "龙虾",
-        "智能家居",
-        "红外线"
+      "relations": [
+        {
+          "id": "task-20260513-073000-edu-print",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-health-doctor",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-123000-123456",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-225017-6d2997",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072110-be1c49",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260509-103800-005",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072121-60344d",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-2026-05-15-aef8f4",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-health-parenting",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260509-103800-006",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "小马哥讨论决定：新招聘家庭智能管家Agent，还是让现有Agent负责",
-      "notes": "前置讨论：需要先确定谁来负责家庭智能设备管理（红外线控制器等）。可能新招一个家庭智能管家Agent。确定后才能跑通红外线配置。",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260512-193943-8f627e",
       "title": "将LLM Wiki私造内容做成PPT/视频（学习方法 vs 知识对比）",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "video-producer-agent",
       "subStatus": "pending",
       "horizon": "quarter",
       "area": "system",
@@ -831,11 +1153,23 @@
         "学习方法"
       ],
       "due": "",
-      "nextAction": "梳理LLM Wiki中的私造内容，策划\"学习方法 vs 单个知识\"对比主题的内容产品",
+      "nextAction": "梳理LLM Wiki私造内容，策划学习方法vs知识对比主题的PPT和视频",
       "notes": "思路：大家都做单个知识的学习，但我们做的是学习方法 vs 知识本身的对比。\n\n目标产出：\n1. PPT 演示文稿\n2. 或做成视频内容\n\n核心卖点：\n- 不是零散的知识点\n- 而是学习方法和知识体系的对比\n- 用 LLM Wiki 里的私造内容做素材",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260508-073254-75b5b6",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-12"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260512-232134-2a74f9",
@@ -852,41 +1186,23 @@
         "阿里云",
         "部署"
       ],
-      "due": "",
+      "due": "2026-05-18",
       "nextAction": "IT运维跟进域名注册，小马哥催促后做验收",
-      "notes": "注意：执行方是IT运维，小马哥只催促+验收。LLM Todo已上云到 http://<SERVER_IP>/todo，需要正式域名。",
+      "notes": "2026-05-15: 实名认证还在处理中，推迟到周一检查",
       "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-12",
-      "updated": "2026-05-12"
-    },
-    {
-      "id": "task-20260512-232444-a18ba4",
-      "title": "IT运维搞定导航站：链接所有网站统一入口",
-      "status": "active",
-      "type": "agent",
-      "assignee": "IT运维助手",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "IT运维",
-        "导航站",
-        "明天搞定"
-      ],
-      "due": "2026-05-13",
-      "nextAction": "搭建导航站页面，统一链接所有内部网站入口",
-      "notes": "注意：执行方是IT运维，小马哥只做催促+验收。这是验收各Agent网页的前提。",
-      "repeat": "",
-      "created": "2026-05-12",
-      "updated": "2026-05-12"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260513-073000-edu-print",
       "title": "教育顾问→图像生成→打印：Agent协作链路+购物清单",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "life",
@@ -903,15 +1219,104 @@
       "nextAction": "整理需求文档，提给CTO评估。可复用Agent能力集市的通用异步任务管道。",
       "notes": "核心链路：教育顾问提需求 → 图像生成专家生成图片 → 打印机输出\n\n两种需求类型：\n1. 玩一些有意思的东西（创意玩具、趣味图片）\n2. 教学上的需求（教学卡片、学习材料）\n\n购物清单功能：\n- 记录制作小玩具需要的材料\n- 方便后续采购和制作\n\n技术方案：\n- 复用Agent能力集市的异步任务管道（task-20260512-073144-f9140c）\n- 教育顾问通过平台提交图片生成需求\n- 图像生成专家接收任务，生成完成后更新状态\n- 打印Agent自动检测到完成状态，触发打印流程\n- 支持购物清单管理（材料记录、采购提醒）\n\n打印机信息：\n- 2D打印机：爱普生（具体型号待确认）\n- 3D打印机：拓竹P1S",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-rmd-02",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-073144-f9140c",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step2",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-193442-3177e9",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-204407-64f4d3",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-211335-ac9cd0",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-075838-778bca",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-112530-f767e0",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-144900-imgprompt",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072110-be1c49",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-03",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-13",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260513-step2",
       "title": "能力集市Step2：可视化看板",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -925,15 +1330,34 @@
       "nextAction": "等Step1核心管道完成后开发看板",
       "notes": "每个Agent有自己的任务看板，小马哥有全局看板。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260512-073144-f9140c",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-13",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260513-step3",
       "title": "能力集市Step3：跑通教育顾问→图像生成→打印场景",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "cto-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "life",
@@ -948,15 +1372,69 @@
       "nextAction": "等Step1+Step2完成后，跑通第一个完整场景",
       "notes": "第一个跑通场景：AI教育顾问提需求→图像生成专家生成图片→打印机输出。包含购物清单功能。",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-stk-02",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-073144-f9140c",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-073000-edu-print",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step2",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-204407-64f4d3",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-112530-f767e0",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-144900-imgprompt",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-13",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260513-health-doctor",
       "title": "【验收-家庭医生自验】家庭医生提交健康管理页面需求",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "family-doctor-2-agent",
       "subStatus": "pending",
       "horizon": "week",
       "area": "life",
@@ -967,40 +1445,44 @@
         "验收"
       ],
       "due": "",
-      "nextAction": "家庭医生已提交需求，等他自己验收后交给小马哥最终验收",
+      "nextAction": "家庭医生自验完成后提交小马哥最终验收",
       "notes": "从原任务拆分。家庭医生负责提需求，已提交，当前在家庭医生自验阶段。",
       "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-health-parenting",
-      "title": "育儿专家提交育儿成长页面需求",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "life",
-      "priority": "high",
-      "tags": [
-        "育儿",
-        "育儿专家",
-        "需求提交"
+      "relations": [
+        {
+          "id": "task-20260512-104355-2f7e22",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-225017-6d2997",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260509-103800-005",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "催育儿专家提交育儿成长页面的具体需求",
-      "notes": "从原任务拆分。AI育儿专家负责提需求，4岁女宝成长记录相关。",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-13",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260513-shared-auth",
       "title": "统一Agent账号体系",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "efficiency-agent",
       "subStatus": "pending",
       "horizon": "month",
       "area": "system",
@@ -1012,134 +1494,51 @@
         "Todo"
       ],
       "due": "",
-      "nextAction": "已在开发中，等验收",
-      "notes": "CTO在做了，等验收就行。",
+      "nextAction": "效率管家在LLM Todo上验证SSO登录流程",
+      "notes": "小马哥指示：效率管家负责验证SSO流程。CTO完成后应找其他Agent验证。",
       "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-opensource",
-      "title": "LLM Todo 开源计划",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "quarter",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "开源",
-        "LLM",
-        "Todo",
-        "规划"
+      "relations": [
+        {
+          "id": "task-20260511-rvw-07",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-opensource-html",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-01",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-06",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
       ],
-      "due": "",
-      "nextAction": "考虑开源策略：license、文档、demo、推广",
-      "notes": "接下来要考虑如何开源LLM Todo。需要规划：代码整理、README、license选择、demo部署、推广策略等。",
-      "repeat": "",
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-opensource-html",
-      "title": "开源 LLM Todo HTML Server",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "quarter",
-      "area": "system",
-      "priority": "medium",
-      "tags": [
-        "开源",
-        "LLM",
-        "Todo",
-        "HTML",
-        "Server"
-      ],
-      "due": "",
-      "nextAction": "规划开源：代码整理、README、LICENSE、demo部署",
-      "notes": "把 LLM Todo 的纯 Python HTML Server 开源出去。这是一个有代表性的项目：纯标准库、无依赖、功能完整的任务管理工具。",
-      "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-design-review",
-      "title": "优化 design review skill：增加系统架构图、流程图等功能",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "skill优化",
-        "design",
-        "review",
-        "架构图",
-        "流程图"
-      ],
-      "due": "",
-      "nextAction": "增强 design review skill，支持系统架构图、流程图、数据流图等多种图表类型的审查",
-      "notes": "当前 design review skill 需要加强，支持更多图表类型：系统架构图、流程图、数据流图、时序图等。",
-      "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-skill-openclaw",
-      "title": "打通 Skill 上传到 OpenClaw 官方 Skills 平台（开源Skill）",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "skill",
-        "OpenClaw",
-        "开源",
-        "发布"
-      ],
-      "due": "",
-      "nextAction": "研究 OpenClaw 官方 Skills 平台的上传流程，打通 skill 发布管线",
-      "notes": "把自研的 skill 开源发布到 OpenClaw 官方 Skills 平台（clawhub.com）。需要：了解平台发布规范、打包、上传、维护更新。",
-      "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
-    },
-    {
-      "id": "task-20260513-chatgpt-ceo",
-      "title": "转发 ChatGPT 建议方向给龙虾合伙人",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "week",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "龙虾合伙人",
-        "ChatGPT",
-        "方向建议"
-      ],
-      "due": "",
-      "nextAction": "把跟 ChatGPT 聊天获得的建议方向整理后发给龙虾合伙人",
-      "notes": "小马哥跟 ChatGPT 聊了一些方向建议，需要整理后发给龙虾合伙人参考。",
-      "repeat": "",
-      "created": "2026-05-13",
-      "updated": "2026-05-13"
+      "updated": "2026-05-15"
     },
     {
       "id": "task-20260514-cleanup-project",
       "title": "清理 project 目录内容",
       "status": "active",
       "type": "personal",
-      "assignee": "",
+      "assignee": "小马哥",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -1149,41 +1548,22 @@
         "project目录"
       ],
       "due": "",
-      "nextAction": "检查 /home/user/projects/ 目录，清理不需要的文件和项目",
+      "nextAction": "周四晚20:00检查project目录清理旧文件",
       "notes": "整理项目目录，删除过时或不再使用的内容，保持目录整洁。",
       "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-14",
-      "updated": "2026-05-14"
-    },
-    {
-      "id": "task-20260514-todo-gantt",
-      "title": "优化 TODO 页面：支持周视角的每天甘特图",
-      "status": "active",
-      "type": "personal",
-      "assignee": "",
-      "subStatus": "pending",
-      "horizon": "month",
-      "area": "system",
-      "priority": "high",
-      "tags": [
-        "llm-todo",
-        "UI优化",
-        "甘特图",
-        "周视角"
-      ],
-      "due": "",
-      "nextAction": "需求已提交给CTO（ID: 5ad5de94），等CTO分配开发者后跟进进度",
-      "notes": "需求已通过 requirement-client 提交到开发中心。需求ID: 5ad5de94-fdae-424b-a234-717a4345fdfa，状态: pending。",
-      "repeat": "",
-      "created": "2026-05-14",
-      "updated": "2026-05-14"
+      "updated": "2026-05-16"
     },
     {
       "id": "task-20260514-github-claw-upload",
-      "title": "跑通上传 GitHub 和 Claw 的流程",
+      "title": "招聘开源管家 — 上传 GitHub/Clawhub/Skill 平台",
       "status": "active",
-      "type": "personal",
-      "assignee": "",
+      "type": "agent",
+      "assignee": "开源管家(待招聘)",
       "subStatus": "pending",
       "horizon": "week",
       "area": "system",
@@ -1196,33 +1576,922 @@
       ],
       "due": "",
       "nextAction": "测试从零开始完成 GitHub 仓库创建和 ClawHub skill 发布的完整流程",
-      "notes": "打通完整的发布流程：GitHub 仓库初始化 → 代码推送 → ClawHub 上传/更新 skill。验证整个流程是否顺畅。",
+      "notes": "任务转交给开源管家（待招聘）。目标：上传GitHub、Clawhub、Skill平台",
       "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-skill-openclaw",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-200027-e43fa9",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-200028-3fcdc8",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
       "created": "2026-05-14",
-      "updated": "2026-05-14"
+      "updated": "2026-05-15"
     },
     {
-      "id": "task-20260514-article-review-strategy",
-      "title": "调整文章 review 策略：先 review 简单文章",
+      "id": "task-20260515-091334-98b1c9",
+      "title": "开发 task-compiler skill（需求池编译排序）",
+      "status": "active",
+      "type": "agent",
+      "assignee": "效率管家",
+      "subStatus": "pending",
+      "horizon": "month",
+      "area": "system",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "依赖 CTO 平台需求 0b0b5608（draft 状态 + Agent提需求API）完成后才能对接。但 skill 本身的排序逻辑、去重算法、输出格式可以先开发。预期产出：skills/task-compiler/ 目录，包含编译脚本和输出模板。",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-091334-f06d22",
+      "title": "配置需求池定时编译 cron（每日推送 Top 5）",
+      "status": "active",
+      "type": "agent",
+      "assignee": "效率管家",
+      "subStatus": "pending",
+      "horizon": "month",
+      "area": "system",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "依赖 task-compiler skill 完成后配置。预期：每天早上 8:30 编译需求池，推送 Top 5 到飞书群。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260515-091334-98b1c9",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-093742-fec616",
+      "title": "跑通上传Agent到平台（扣子等）的流程 — 把技能变专家上架售卖",
+      "status": "active",
+      "type": "agent",
+      "assignee": "open-source-agent",
+      "subStatus": "pending",
+      "horizon": "month",
+      "area": "dev",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "调研完Agent平台后，跟小马哥讨论哪些Agent值得上传，以及哪些需要注册账号",
+      "notes": "第1步：开源管家调研平台 → 第2步：跟小马哥讨论上传策略",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260514-github-claw-upload",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-193442-3177e9",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-200027-e43fa9",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-200028-3fcdc8",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072637-8423c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-095205-fc9ece",
+      "title": "审稿增强APP：语音播放文章 + 语音输入评论（后台播放模式）",
+      "status": "active",
+      "type": "discuss",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "quarter",
+      "area": "dev",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "需要讨论技术方案（原生APP vs WebAPP vs 小程序）后确定方向",
+      "notes": "需求描述：做一个APP（或增强现有审稿平台），核心功能：1）语音播放文章内容（TTS）；2）后台播放模式；3）播放过程中随时语音输入评论；4）评论自动记录并关联到文章位置；5）最终根据人类审稿意见更新审稿平台。解决小马哥白天在路上无法看文章的问题。",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-sh-01",
+      "title": "接入小爱音箱管理",
+      "status": "active",
+      "type": "agent",
+      "assignee": "smart-home-agent",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "2026-05-22",
+      "nextAction": "使用 todo-client skill 查看本任务详情，了解小爱音箱当前配置和接入方式",
+      "notes": "承接小爱音箱（xiaomusic）的管理工作，包括播放控制、定时播放、音乐列表维护。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-06",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "explorationLine",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15 13:19",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-sh-02",
+      "title": "接入家里红外传感器",
+      "status": "active",
+      "type": "agent",
+      "assignee": "smart-home-agent",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "2026-05-22",
+      "nextAction": "使用 todo-client skill 查看本任务详情，了解红外传感器型号和接入方式",
+      "notes": "接入家里的红外传感器，实现自动化联动（如人体检测触发灯光等场景）。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-rvw-06",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "explorationLine",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15 13:19",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-193442-3177e9",
+      "title": "账号管理专家：上传非敏感账号信息到管理平台",
+      "status": "active",
+      "type": "agent",
+      "assignee": "account-manager-agent",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "system",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "检查IT运维管理平台是否可用，上传非敏感账号信息",
+      "notes": "IT运维已有统一管理网站。账号管理专家去确认平台可用后，将非敏感账号信息整理上传。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-shared-auth",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-eff-04",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-193442-329c31",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-232444-a18ba4",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-194033-0ab45f",
+      "title": "配合智能家居Agent完成红外码确认+接入松下台灯",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "2026-05-22",
+      "nextAction": "和逸安配合，确认红外码并接入松下台灯",
+      "notes": "配合逸安（smart-home-agent）完成：1.确认红外码 2.接入松下台灯。逸安负责技术对接，小马哥配合提供硬件信息和现场确认。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260512-193943-67dd40",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-204407-64f4d3",
+      "title": "搜索专家到Agent集市注册，支持深度研究能力",
+      "status": "active",
+      "type": "agent",
+      "assignee": "search-expert-agent",
+      "subStatus": "pending",
+      "horizon": "month",
+      "area": "system",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "等Agent集市（能力集市）开发完成后，去注册并上架深度研究能力",
+      "notes": "前置依赖：能力集市开发完成（Step1-3）。搜索专家需要在集市上注册，提供深度研究能力支持。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260512-073144-f9140c",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step2",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-144900-imgprompt",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260508-073254-dff472",
+          "type": "blocked-by",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260515-211335-ac9cd0",
+      "title": "探索3D打印有意思的创意项目",
+      "status": "active",
+      "type": "agent",
+      "assignee": "3d-print-agent",
+      "subStatus": "pending",
+      "horizon": "month",
+      "area": "life",
+      "priority": "low",
+      "tags": [],
+      "due": "",
+      "nextAction": "调研适合拓竹P1S的有趣3D打印项目，推荐给小马哥",
+      "notes": "拓竹P1S 3D打印机。探索有意思的东西：益智玩具、家居用品、创意小物件等。可以结合小孩兴趣（4岁女宝）。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260511-eff-03",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-15",
+      "updated": "2026-05-15"
+    },
+    {
+      "id": "task-20260516-075838-778bca",
+      "title": "Agent协作信息平台：从异步通信到自进化Web",
+      "status": "active",
+      "type": "discuss",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "等小马哥有空深入讨论方向和优先级",
+      "notes": "核心洞察：软件从需求中长出来。信息生产消费→发现关联→更好数据结构→中心化Web。Architecture级设计思路。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260518-rvw-02",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-194904-57029d",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-123000-123456",
+      "title": "育儿专家提交育儿成长网页开发需求",
+      "status": "active",
+      "type": "agent",
+      "assignee": "education-agent",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "小马哥已确认信任育儿专家的12维度方案。下一步：通过requirement-client提交开发需求到ADC平台，含5个核心页面和数据模型。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260512-104355-2f7e22",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-2026-05-15-aef8f4",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-health-parenting",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260509-103800-006",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-193442-329c31",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225018-493505",
+      "title": "上传家庭财务信息给财务管家录入",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "周二晚20:00花15分钟列出收支资产概览发给财务管家",
+      "notes": "整理收支资产概览，发给财务管家。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260515-225017-6d2997",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260512-072637-8423c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225017-6d2997",
+      "title": "上传个人身体健康情况给家庭医生Agent录入",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "周二晚20:15花10分钟找最近体检报告发给家庭医生",
+      "notes": "找最近的体检报告，发给家庭医生。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-health-doctor",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-225018-493505",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260509-103800-005",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225018-5ba40b",
+      "title": "提单报销 — 整理发票走报销流程",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "周一晚20:00花15分钟整理发票拍照上传",
+      "notes": "",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225018-3e151f",
+      "title": "预约看牙医 — 做牙齿深度清洁",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "周一上午打电话预约牙科诊所做深度清洁",
+      "notes": "",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225018-98e210",
+      "title": "修车 — 车辆保养/维修",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260515-225018-cca638",
+      "title": "社交人情：列亲友关键日期清单",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "low",
+      "tags": [],
+      "due": "",
+      "nextAction": "周五晚20:00花10分钟列亲友关键日期",
+      "notes": "",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-144900-imgprompt",
+      "title": "研究图像生成prompt的skill并上架技能商城",
+      "status": "active",
+      "type": "agent",
+      "assignee": "skill-engineer-agent",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "high",
+      "tags": [],
+      "due": "",
+      "nextAction": "研究图像生成prompt skill并上架",
+      "notes": "小马哥需求：1) 研究图像生成prompt的skill 2) 放到技能商城（clawhub/技能市场）3) 扫描没问题后link到图像生成专家的工作目录的skills目录下。",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260513-073000-edu-print",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260513-step3",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260515-093742-fec616",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-144900-utility",
+      "title": "查清楚水电费查询方式 — 准备让租客交",
+      "status": "active",
+      "type": "personal",
+      "assignee": "小马哥",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "life",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "周三晚20:00查水电缴费账号和查询方式",
+      "notes": "查清楚水电费缴费账号和查询方式，准备转给租客自己交。",
+      "repeat": "",
+      "relations": [],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-203252-cc69ce",
+      "title": "评论功能测试任务",
       "status": "active",
       "type": "personal",
       "assignee": "",
       "subStatus": "pending",
       "horizon": "week",
-      "area": "system",
+      "area": "dev",
       "priority": "medium",
-      "tags": [
-        "文章审阅",
-        "review",
-        "策略",
-        "文章管家"
-      ],
+      "tags": [],
       "due": "",
-      "nextAction": "等开发中心完成开发后，Agent 验收",
-      "notes": "小马哥已跟文章管家说了，文章管家也提交了需求。开发中心在做。下一步：等开发完成后让 Agent 去验收。",
+      "nextAction": "",
+      "notes": "",
       "repeat": "",
-      "created": "2026-05-14",
-      "updated": "2026-05-14"
+      "relations": [
+        {
+          "id": "task-20260516-203307-a28499",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-203318-3170a0",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-140813-0f35aa",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-125507-61a2c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-203307-a28499",
+      "title": "评论功能测试任务",
+      "status": "active",
+      "type": "personal",
+      "assignee": "",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "dev",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260516-203252-cc69ce",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-203318-3170a0",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-140813-0f35aa",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-125507-61a2c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
+    },
+    {
+      "id": "task-20260516-203318-3170a0",
+      "title": "评论功能测试任务",
+      "status": "active",
+      "type": "personal",
+      "assignee": "",
+      "subStatus": "pending",
+      "horizon": "week",
+      "area": "dev",
+      "priority": "medium",
+      "tags": [],
+      "due": "",
+      "nextAction": "",
+      "notes": "",
+      "repeat": "",
+      "relations": [
+        {
+          "id": "task-20260516-203252-cc69ce",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-203307-a28499",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260511-140813-0f35aa",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260514-191250-8046d7",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        },
+        {
+          "id": "task-20260516-125507-61a2c1",
+          "type": "related",
+          "direction": "out",
+          "reason": "任务文本命中关联对象",
+          "source": "compile"
+        }
+      ],
+      "layer": "",
+      "source": "",
+      "sourceType": "agent",
+      "created": "2026-05-16",
+      "updated": "2026-05-16"
     }
   ]
 }

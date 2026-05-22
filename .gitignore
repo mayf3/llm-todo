@@ -1,0 +1,33 @@
+# LLM Todo - 开源发布文件
+# 将这些文件放入 project/llm_todo/ 根目录
+
+# 运行时数据（绝不开源）
+data/
+raw/
+logs/
+
+# 环境变量（包含 API Key）
+.env
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 备份
+data/backups/
+
+# npm（仅 llm-todo-app/ llm-todo/）
+node_modules/
+dist/
