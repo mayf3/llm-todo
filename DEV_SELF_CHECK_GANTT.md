@@ -46,7 +46,7 @@
 |--------|------|
 | `rsync` to `/opt/llm-todo/web/` | ✅ |
 | `docker cp` into running container | ✅ |
-| 线上可访问 | ✅ `http://<SERVER_IP>/todo/` |
+| 线上可访问 | ✅ `<SERVER_URL>/todo/` |
 | 甘特图 Tab 可点击切换 | ✅ |
 
 ---
@@ -74,7 +74,7 @@
 
 ## 4. 用户操作路径
 
-1. 打开 `http://<SERVER_IP>/todo/`
+1. 打开 `<SERVER_URL>/todo/`
 2. 点击「📊 甘特图」Tab 切换到甘特图视图
 3. 使用 ◀/▶ 按钮切换周
 4. 点击「📅 今天」快速回本周

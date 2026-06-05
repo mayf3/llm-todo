@@ -189,7 +189,7 @@ http://localhost:8720/
 
 ### 本地开发（无需认证）
 ```bash
-cd /home/user/projects/llm_todo
+cd <workspace>/llm_todo
 python3 scripts/llm_todo_server.py
 # 访问 http://localhost:8720/
 ```
@@ -358,7 +358,7 @@ llm_todo/
 
 ## 联系方式
 
-- 项目路径：`/home/user/projects/llm_todo/`
+- 项目路径：`<workspace>/llm_todo/`
 - 本地端口：`8720`
 - Agent 负责人：效率管家（Agent A）+ 宏观规划 Agent（Agent B）
 - 密钥管理：效率管家 Token 存储在环境变量或密钥管理工具中，不写入代码库

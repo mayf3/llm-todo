@@ -6,7 +6,7 @@
 set -euo pipefail
 
 API_BASE="http://localhost:8720"
-AGENTS_FILE="/home/user/projects/llm_todo/data/agents.json"
+AGENTS_FILE="${AGENTS_FILE:-./data/agents.json}"
 DRY_RUN=false
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=true
 
