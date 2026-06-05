@@ -7,8 +7,8 @@
 #   ./scripts/sync_remote.sh <remote_host> [remote_path]
 #
 # Examples:
-#   ./scripts/sync_remote.sh user@<SERVER_IP> /var/www/llm_todo
-#   LLM_TODO_REMOTE_SYNC_URL=http://<SERVER_IP> ./sync_remote.sh
+#   ./scripts/sync_remote.sh user@<server-ip> /var/www/llm_todo
+#   LLM_TODO_REMOTE_SYNC_URL=http://<server-ip> ./sync_remote.sh
 # ============================================================================
 set -euo pipefail
 

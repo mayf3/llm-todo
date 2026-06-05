@@ -146,7 +146,7 @@ data: [DONE]
 ## 启动服务器
 
 ```bash
-cd /home/user/projects/llm_todo
+cd <workspace>/llm_todo
 
 # 使用 GLM API 启动
 GLM_API_KEY="73a397915e3646f9ab9d9ed7cfd04611.CXQiVkPOEqkuTe1G" \
