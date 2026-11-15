@@ -44,6 +44,28 @@ AGENT_CHAT_BASE_URL = os.environ.get("AGENT_CHAT_BASE_URL", "").rstrip("/")
 AUTH_TOKEN = os.environ.get("LLM_TODO_TOKEN", "").strip()
 JWT_SESSION_TTL_SECONDS = 24 * 60 * 60
 
+def load_revoked_token_digests() -> frozenset[str]:
+    # A public list of SHA-256 hashes of compromised high-entropy credentials.
+    # Tokens must also be rotated at the issuer; this is a defense in depth.
+    path = Path(__file__).with_name("revoked_public_tokens.sha256")
+    digests = [
+        line.strip() for line in path.read_text(encoding="ascii").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    if not digests or any(not re.fullmatch(r"[0-9a-f]{64}", x) for x in digests):
+        raise RuntimeError("Missing or invalid published-token revocation list")
+    return frozenset(digests)
+
+
+REVOKED_TOKEN_SHA256 = load_revoked_token_digests()
+
+
+def is_published_token(token: str) -> bool:
+    if not token:
+        return False
+    return hashlib.sha256(token.encode("utf-8")).hexdigest() in REVOKED_TOKEN_SHA256
+
+
 # LLM Provider 配置
 OPENAI_COMPAT_API_KEY = os.environ.get("OPENAI_COMPAT_API_KEY", os.environ.get("DEEPSEEK_API_KEY", ""))
 OPENAI_COMPAT_BASE_URL = os.environ.get("OPENAI_COMPAT_BASE_URL", "https://api.deepseek.com/v1")
@@ -620,6 +642,8 @@ def create_agent_account(payload: dict) -> dict:
     if any(agent.get("name", "").lower() == name.lower() for agent in data["agents"]):
         raise ValueError("agent already exists")
     token = clean_text(payload.get("token"), 512) or uuid.uuid4().hex
+    if is_published_token(token):
+        raise ValueError("This agent token was exposed and must be replaced")
     agent = {
         "id": unique_agent_id(name, data["agents"], payload.get("id")),
         "name": name,
@@ -634,7 +658,7 @@ def create_agent_account(payload: dict) -> dict:
 def verify_agent(name: object, token: object) -> dict | None:
     clean_name = clean_text(name, 80)
     clean_token = clean_text(token, 512)
-    if not clean_name or not clean_token:
+    if not clean_name or not clean_token or is_published_token(clean_token):
         return None
     for agent in load_agents()["agents"]:
         agent_token = str(agent.get("token", ""))
@@ -3638,6 +3662,8 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     if not AUTH_TOKEN:
         raise SystemExit("Refusing to start without LLM_TODO_TOKEN (API authentication is required)")
+    if is_published_token(AUTH_TOKEN):
+        raise SystemExit("Refusing to start with a previously published admin token; rotate LLM_TODO_TOKEN")
     port = int(os.environ.get("LLM_TODO_PORT", "8720"))
     host = os.environ.get("LLM_TODO_HOST", "127.0.0.1")
     DATA.mkdir(parents=True, exist_ok=True)
