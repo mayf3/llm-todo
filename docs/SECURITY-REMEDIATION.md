@@ -19,3 +19,11 @@ Mandatory operator actions after pulling this security patch:
    even after a normal deletion commit. Consider GitHub Support assistance.
 6. Keep private data on protected local storage, never in source control.
    The .gitignore rule only prevents NEW, untracked files.
+
+## Defense in depth
+
+The server also refuses all credentials whose SHA-256 digests match the
+historically exposed agent/account tokens and the archived mobile shared
+token. This denylist does NOT rotate credentials in other services or remove
+GitHub history. After deployment, provision replacement tokens and invalidate
+all old sessions. Do not restore these values from an old backup.

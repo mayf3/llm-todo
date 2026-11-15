@@ -1,5 +1,6 @@
 """Security regressions; no real user data required."""
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -34,6 +35,19 @@ class SecurityTests(unittest.TestCase):
             cwd=SCRIPT.parent.parent, capture_output=True, text=True, check=True
         )
         self.assertEqual(result.stdout.strip(), "")
+
+    def test_previously_published_agent_token_cannot_login(self):
+        stale = "test-revoked-token-unit-only"
+        digest = hashlib.sha256(stale.encode()).hexdigest()
+        state = {"agents": [{"id": "unit", "name": "Unit", "token": stale}], "sessions": {}}
+        with patch.object(server, "REVOKED_TOKEN_SHA256", frozenset([digest])):
+            with patch.object(server, "load_agents", return_value=state):
+                self.assertIsNone(server.verify_agent("Unit", stale))
+                with self.assertRaisesRegex(ValueError, "exposed"):
+                    server.create_agent_account({"name": "New", "token": stale})
+            with patch.object(server, "AUTH_TOKEN", stale):
+                with self.assertRaisesRegex(SystemExit, "rotate"):
+                    server.main()
 
     def test_server_requires_admin_token(self):
         env = os.environ.copy()
