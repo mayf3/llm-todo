@@ -33,9 +33,16 @@ jobs:
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+      - name: Verify private runtime data is not tracked
+        run: |
+          if [ -n "$(git ls-files -- data/)" ]; then
+            echo "ERROR: private data/ files must not be tracked"
+            exit 1
+          fi
+
       - name: Test with unittest
         run: |
-          python -m unittest discover -s tests -v 2>/dev/null || echo "No tests found — skipping"
+          python -m unittest discover -s tests -v
 
   build:
     runs-on: ubuntu-latest

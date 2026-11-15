@@ -42,6 +42,7 @@ BASE_PATH = os.environ.get("LLM_TODO_BASE_PATH", "").rstrip("/")
 DEFAULT_MODEL = os.environ.get("LLM_TODO_MODEL", "gpt-5.4-mini")
 AGENT_CHAT_BASE_URL = os.environ.get("AGENT_CHAT_BASE_URL", "").rstrip("/")
 AUTH_TOKEN = os.environ.get("LLM_TODO_TOKEN", "").strip()
+JWT_SESSION_TTL_SECONDS = 24 * 60 * 60
 
 # LLM Provider 配置
 OPENAI_COMPAT_API_KEY = os.environ.get("OPENAI_COMPAT_API_KEY", os.environ.get("DEEPSEEK_API_KEY", ""))
@@ -645,7 +646,9 @@ def verify_agent(name: object, token: object) -> dict | None:
 
 
 def jwt_secret() -> bytes:
-    secret = os.environ.get("LLM_TODO_JWT_SECRET", "").strip() or AUTH_TOKEN or "llm-todo-local-secret"
+    secret = os.environ.get("LLM_TODO_JWT_SECRET", "").strip() or AUTH_TOKEN
+    if not secret:
+        raise RuntimeError("Set LLM_TODO_TOKEN before signing JWTs")
     return secret.encode("utf-8")
 
 
@@ -665,7 +668,8 @@ def create_agent_session(agent: dict) -> str:
     header = b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode("utf-8"))
     payload = b64url_encode(
         json.dumps(
-            {"sub": agent["id"], "name": agent["name"], "iat": int(time.time()), "jti": uuid.uuid4().hex},
+            {"sub": agent["id"], "name": agent["name"], "iat": int(time.time()),
+             "exp": int(time.time()) + JWT_SESSION_TTL_SECONDS, "jti": uuid.uuid4().hex},
             separators=(",", ":"),
             ensure_ascii=False,
         ).encode("utf-8")
@@ -683,15 +687,26 @@ def verify_agent_jwt(jwt: str) -> dict | None:
     if len(parts) != 3:
         return None
     message = ".".join(parts[:2])
+    try:
+        header = json.loads(b64url_decode(parts[0]).decode("utf-8"))
+        payload = json.loads(b64url_decode(parts[1]).decode("utf-8"))
+    except (ValueError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(header, dict) or header.get("alg") != "HS256" or header.get("typ") != "JWT":
+        return None
+    if not isinstance(payload, dict):
+        return None
+    now = int(time.time())
+    issued_at, expires_at = payload.get("iat"), payload.get("exp")
+    if (type(issued_at) is not int or type(expires_at) is not int
+            or issued_at > now + 60 or expires_at <= now
+            or expires_at - issued_at > JWT_SESSION_TTL_SECONDS):
+        return None
     if not hmac.compare_digest(sign_agent_jwt(message), parts[2]):
         return None
     data = load_agents()
     session = data["sessions"].get(jwt)
     if not isinstance(session, dict):
-        return None
-    try:
-        payload = json.loads(b64url_decode(parts[1]).decode("utf-8"))
-    except (ValueError, json.JSONDecodeError):
         return None
     agent_id = str(payload.get("sub", ""))
     if session.get("agentId") != agent_id:
@@ -3298,8 +3313,6 @@ class Handler(BaseHTTPRequestHandler):
             if agent:
                 self.agent_info = agent
                 return True
-        if not AUTH_TOKEN:
-            return True
         self.send_response(401)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("WWW-Authenticate", 'Bearer realm="LLM Todo"')
@@ -3322,7 +3335,7 @@ class Handler(BaseHTTPRequestHandler):
         return False
 
     def require_admin_or_agent(self) -> bool:
-        if self.is_admin or self.agent_info or not AUTH_TOKEN:
+        if self.is_admin or self.agent_info:
             return True
         self.send_json({"error": "admin or agent authorization required"}, 403)
         return False
@@ -3337,7 +3350,7 @@ class Handler(BaseHTTPRequestHandler):
         }
 
     def can_manage_comment(self, comment: dict) -> bool:
-        if self.is_admin or not AUTH_TOKEN:
+        if self.is_admin:
             return True
         if not self.agent_info:
             return False
@@ -3450,7 +3463,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not agent:
                     self.send_json({"error": "invalid agent credentials"}, 401)
                     return
-                self.send_json({"jwt": create_agent_session(agent), "agent": agent})
+                self.send_json({"jwt": create_agent_session(agent),
+                                "agent": {"id": agent["id"], "name": agent["name"]}})
             elif path == "/api/chat":
                 self.send_json(dispatch_chat(payload))
             elif path == "/api/chat/stream":
@@ -3622,6 +3636,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if not AUTH_TOKEN:
+        raise SystemExit("Refusing to start without LLM_TODO_TOKEN (API authentication is required)")
     port = int(os.environ.get("LLM_TODO_PORT", "8720"))
     host = os.environ.get("LLM_TODO_HOST", "127.0.0.1")
     DATA.mkdir(parents=True, exist_ok=True)
